@@ -62,6 +62,9 @@ class Player(object):
     def GetAttackingNetPos(self, game):
         return game.arena.net_position[TeamSide.Opposite(self.team_side)]
 
+    def GetOwnNetPos(self, game):
+        return game.arena.net_position[self.team_side]
+
     def GetAttackDir(self, game):
         return numpy.sign(self.GetAttackingNetPos(game)[1])
 
@@ -258,10 +261,339 @@ class SimplePlayer(Player):
                     if verbosity: print('move towards to opposing controller')
                     target_pos = control_player.GetPosition(game)
                 else:
-                    # move towards opposing controller
+                    # move towards midway point between opposing controller and own goal
                     if verbosity: print('move towards MIDWAY point to opposing controller')
                     target_pos = (control_player.GetPosition(
                         game) + control_player.GetAttackingNetPos(game)) * 0.5
+                delta = target_pos - self.GetPosition(game)
+                self.SetInput(game, delta)
+        else:
+            if verbosity: print("shouldn't reach here", control_player)
+
+
+class AdaptedSimplePlayer(Player):
+    SHOOT_ARENA_DIST = 0.3
+    SHOT_CHANCE = 0.3
+    PASS_CHANCE = 0.8
+    PLAY_RANDOMLY = False
+    if PLAY_RANDOMLY:
+        RANDOM_SHOT_CHANCE = 0.03
+        RANDOM_PASS_CHANCE = 0.03
+        RANDOM_SKATE_CHANCE = 0.9
+    else:
+        RANDOM_SHOT_CHANCE = 0.0
+        RANDOM_PASS_CHANCE = 0.0
+        RANDOM_SKATE_CHANCE = 0.0
+
+    def __init__(self, name, team_side):
+        super(AdaptedSimplePlayer, self).__init__(name, team_side)
+
+    def custom_think(self, game, verbosity):
+        super(AdaptedSimplePlayer, self).custom_think(game, verbosity)
+
+        if verbosity: print('simple', self.name, 'thinking:', end=" ")
+        control_player = game.control.GetControl()
+        net_pos = self.GetAttackingNetPos(game)
+
+        if control_player is self:
+            net_delta = net_pos - self.GetPosition(game)
+            # move towards net
+            self.SetInput(game, net_delta)
+            net_dist = numpy.linalg.norm(net_delta)
+
+            shoot_dist = self.SHOOT_ARENA_DIST * numpy.linalg.norm(
+                numpy.array(game.arena.arena_size))
+            shot_chance = game.PlayerShot(self, True, 0)
+            # shoot if close
+            shoot = self.RANDOM_SHOT_CHANCE == 0.0 and net_dist < shoot_dist and shot_chance > self.SHOT_CHANCE
+            shoot = shoot or numpy.random.random() < self.RANDOM_SHOT_CHANCE
+            if shoot:
+                if verbosity:   print('shooting because %f < %f' % (net_dist, shoot_dist))
+                self.SetAction(game, Action.SHOOT)
+            else:
+                lowest_net_dist = numpy.linalg.norm(self.GetPosition(game) - net_pos)
+                for teammate, action in zip(game.team_players[self.team_side], Action.PASSES):
+                    if teammate is self:
+                        continue
+                    if teammate.GetAction(game) == Action.STUNNED:
+                        continue
+                    net_dist = numpy.linalg.norm(teammate.GetPosition(game) - net_pos)
+                    pass_chance = game.PlayerPass(self, teammate, True, 0)
+                    should_pass = self.RANDOM_PASS_CHANCE == 0.0 and net_dist < lowest_net_dist and pass_chance > self.PASS_CHANCE
+                    should_pass = should_pass or numpy.random.random() < self.RANDOM_PASS_CHANCE
+                    if should_pass:
+                        self.SetAction(game, action)
+                        lowest_net_dist = net_dist
+                        if verbosity: print('best pass net dist is', net_dist, self.action)
+
+            if self.GetAction(game) == Action.NONE:
+                if verbosity: print('move towards net')
+
+        elif control_player:
+            if numpy.random.random() < self.RANDOM_SKATE_CHANCE:
+                self.SetInput(game, numpy.zeros(2))
+            elif control_player.team_side == self.team_side:
+                if verbosity: print('move up areana')
+                # just move up arena
+                input = net_pos - self.GetPosition(game)
+                self.SetInput(game, input)
+            else:
+                # move towards midway point between opposing controller and own goal
+                if verbosity: print('move towards MIDWAY point to opposing controller')
+                target_pos = (control_player.GetPosition(
+                    game) + control_player.GetAttackingNetPos(game)) * 0.5
+                delta = target_pos - self.GetPosition(game)
+                self.SetInput(game, delta)
+        else:
+            if verbosity: print("shouldn't reach here", control_player)
+
+
+class EgoisticPlayer(Player):
+    SHOOT_ARENA_DIST = 0.3
+    SHOT_CHANCE = 0.3
+    PASS_CHANCE = 0.8
+    PLAY_RANDOMLY = False
+    if PLAY_RANDOMLY:
+        RANDOM_SHOT_CHANCE = 0.03
+        RANDOM_PASS_CHANCE = 0.03
+        RANDOM_SKATE_CHANCE = 0.9
+    else:
+        RANDOM_SHOT_CHANCE = 0.0
+        RANDOM_PASS_CHANCE = 0.0
+        RANDOM_SKATE_CHANCE = 0.0
+
+    def __init__(self, name, team_side):
+        super(EgoisticPlayer, self).__init__(name, team_side)
+
+    def custom_think(self, game, verbosity):
+        super(EgoisticPlayer, self).custom_think(game, verbosity)
+
+        if verbosity: print('simple', self.name, 'thinking:', end=" ")
+        control_player = game.control.GetControl()
+        net_pos = self.GetAttackingNetPos(game)
+
+        if control_player is self:
+            net_delta = net_pos - self.GetPosition(game)
+            # move towards net
+            self.SetInput(game, net_delta)
+            net_dist = numpy.linalg.norm(net_delta)
+
+            shoot_dist = self.SHOOT_ARENA_DIST * numpy.linalg.norm(
+                numpy.array(game.arena.arena_size))
+            shot_chance = game.PlayerShot(self, True, 0)
+            # shoot if close
+            shoot = self.RANDOM_SHOT_CHANCE == 0.0 and net_dist < shoot_dist and shot_chance > self.SHOT_CHANCE
+            shoot = shoot or numpy.random.random() < self.RANDOM_SHOT_CHANCE
+            if shoot:
+                if verbosity:   print('shooting because %f < %f' % (net_dist, shoot_dist))
+                self.SetAction(game, Action.SHOOT)
+
+            if self.GetAction(game) == Action.NONE:
+                if verbosity: print('move towards net')
+
+        elif control_player:
+            if numpy.random.random() < self.RANDOM_SKATE_CHANCE:
+                self.SetInput(game, numpy.zeros(2))
+            elif control_player.team_side == self.team_side:
+                if verbosity: print('move towards control player')
+                # move towards control player
+                input = control_player.GetPosition(game) - self.GetPosition(game)
+                self.SetInput(game, input)
+            else:
+                # move towards midway point between opposing controller and own goal
+                if verbosity: print('move towards MIDWAY point to opposing controller')
+                target_pos = (control_player.GetPosition(
+                    game) + control_player.GetAttackingNetPos(game)) * 0.5
+                delta = target_pos - self.GetPosition(game)
+                self.SetInput(game, delta)
+        else:
+            if verbosity: print("shouldn't reach here", control_player)
+
+
+class AggressivePlayer(Player):
+    SHOOT_ARENA_DIST = 0.3
+    SHOT_CHANCE = 0.3
+    PASS_CHANCE = 0.8
+    PLAY_RANDOMLY = False
+    if PLAY_RANDOMLY:
+        RANDOM_SHOT_CHANCE = 0.03
+        RANDOM_PASS_CHANCE = 0.03
+        RANDOM_SKATE_CHANCE = 0.9
+    else:
+        RANDOM_SHOT_CHANCE = 0.0
+        RANDOM_PASS_CHANCE = 0.0
+        RANDOM_SKATE_CHANCE = 0.0
+
+    def __init__(self, name, team_side):
+        super(AggressivePlayer, self).__init__(name, team_side)
+
+    def custom_think(self, game, verbosity):
+        super(AggressivePlayer, self).custom_think(game, verbosity)
+
+        if verbosity: print('simple', self.name, 'thinking:', end=" ")
+        control_player = game.control.GetControl()
+        net_pos = self.GetAttackingNetPos(game)
+
+        if control_player is self:
+            net_delta = net_pos - self.GetPosition(game)
+            # move towards net
+            self.SetInput(game, net_delta)
+            net_dist = numpy.linalg.norm(net_delta)
+
+            shoot_dist = self.SHOOT_ARENA_DIST * numpy.linalg.norm(
+                numpy.array(game.arena.arena_size))
+            shot_chance = game.PlayerShot(self, True, 0)
+            # shoot if close
+            shoot = self.RANDOM_SHOT_CHANCE == 0.0 and net_dist < shoot_dist and shot_chance > self.SHOT_CHANCE
+            shoot = shoot or numpy.random.random() < self.RANDOM_SHOT_CHANCE
+            if shoot:
+                if verbosity:   print('shooting because %f < %f' % (net_dist, shoot_dist))
+                self.SetAction(game, Action.SHOOT)
+
+            if self.GetAction(game) == Action.NONE:
+                if verbosity: print('move towards net')
+
+        elif control_player:
+            if numpy.random.random() < self.RANDOM_SKATE_CHANCE:
+                self.SetInput(game, numpy.zeros(2))
+            elif control_player.team_side == self.team_side:
+                if verbosity: print('move up areana')
+                # just move up arena
+                input = net_pos - self.GetPosition(game)
+                self.SetInput(game, input)
+            else:
+                # move towards opposing controller
+                if verbosity: print('move towards opposing controller')
+                target_pos = control_player.GetPosition(game)
+                delta = target_pos - self.GetPosition(game)
+                self.SetInput(game, delta)
+        else:
+            if verbosity: print("shouldn't reach here", control_player)
+
+
+class DefensivePlayer(Player):
+    SHOOT_ARENA_DIST = 0.3
+    SHOT_CHANCE = 0.3
+    PASS_CHANCE = 0.8
+    PLAY_RANDOMLY = False
+    if PLAY_RANDOMLY:
+        RANDOM_SHOT_CHANCE = 0.03
+        RANDOM_PASS_CHANCE = 0.03
+        RANDOM_SKATE_CHANCE = 0.9
+    else:
+        RANDOM_SHOT_CHANCE = 0.0
+        RANDOM_PASS_CHANCE = 0.0
+        RANDOM_SKATE_CHANCE = 0.0
+
+    def __init__(self, name, team_side):
+        super(DefensivePlayer, self).__init__(name, team_side)
+
+    def custom_think(self, game, verbosity):
+        super(DefensivePlayer, self).custom_think(game, verbosity)
+
+        if verbosity: print('simple', self.name, 'thinking:', end=" ")
+        control_player = game.control.GetControl()
+        net_pos = self.GetAttackingNetPos(game)
+
+        if control_player is self:
+            net_delta = net_pos - self.GetPosition(game)
+            # move towards net
+            self.SetInput(game, net_delta)
+            net_dist = numpy.linalg.norm(net_delta)
+
+            shoot_dist = self.SHOOT_ARENA_DIST * numpy.linalg.norm(
+                numpy.array(game.arena.arena_size))
+            shot_chance = game.PlayerShot(self, True, 0)
+            # shoot if close
+            shoot = self.RANDOM_SHOT_CHANCE == 0.0 and net_dist < shoot_dist and shot_chance > self.SHOT_CHANCE
+            shoot = shoot or numpy.random.random() < self.RANDOM_SHOT_CHANCE
+            if shoot:
+                if verbosity:   print('shooting because %f < %f' % (net_dist, shoot_dist))
+                self.SetAction(game, Action.SHOOT)
+            else:
+                lowest_net_dist = numpy.linalg.norm(self.GetPosition(game) - net_pos)
+                for teammate, action in zip(game.team_players[self.team_side], Action.PASSES):
+                    if teammate is self:
+                        continue
+                    if teammate.GetAction(game) == Action.STUNNED:
+                        continue
+                    net_dist = numpy.linalg.norm(teammate.GetPosition(game) - net_pos)
+                    pass_chance = game.PlayerPass(self, teammate, True, 0)
+                    should_pass = self.RANDOM_PASS_CHANCE == 0.0 and net_dist < lowest_net_dist and pass_chance > self.PASS_CHANCE
+                    should_pass = should_pass or numpy.random.random() < self.RANDOM_PASS_CHANCE
+                    if should_pass:
+                        self.SetAction(game, action)
+                        lowest_net_dist = net_dist
+                        if verbosity: print('best pass net dist is', net_dist, self.action)
+
+            if self.GetAction(game) == Action.NONE:
+                if verbosity: print('move towards net')
+
+        elif control_player:
+            if numpy.random.random() < self.RANDOM_SKATE_CHANCE:
+                self.SetInput(game, numpy.zeros(2))
+            else:
+                # move towards own goal
+                if verbosity: print('move towards own goal')
+                target_pos = self.GetOwnNetPos(game)
+                delta = target_pos - self.GetPosition(game)
+                self.SetInput(game, delta)
+        else:
+            if verbosity: print("shouldn't reach here", control_player)
+
+
+class ShyPlayer(Player):
+    SHOOT_ARENA_DIST = 0.3
+    SHOT_CHANCE = 0.3
+    PASS_CHANCE = 0.8
+    PLAY_RANDOMLY = False
+    if PLAY_RANDOMLY:
+        RANDOM_SHOT_CHANCE = 0.03
+        RANDOM_PASS_CHANCE = 0.03
+        RANDOM_SKATE_CHANCE = 0.9
+    else:
+        RANDOM_SHOT_CHANCE = 0.0
+        RANDOM_PASS_CHANCE = 0.0
+        RANDOM_SKATE_CHANCE = 0.0
+
+    def __init__(self, name, team_side):
+        super(ShyPlayer, self).__init__(name, team_side)
+
+    def custom_think(self, game, verbosity):
+        super(ShyPlayer, self).custom_think(game, verbosity)
+
+        if verbosity: print('simple', self.name, 'thinking:', end=" ")
+        control_player = game.control.GetControl()
+        net_pos = self.GetAttackingNetPos(game)
+
+        if control_player is self:
+            net_delta = net_pos - self.GetPosition(game)
+            # move away from net
+            self.SetInput(game, -net_delta)
+
+            for teammate, action in zip(game.team_players[self.team_side], Action.PASSES):
+                if teammate is self:
+                    continue
+                if teammate.GetAction(game) == Action.STUNNED:
+                    continue
+                net_dist = numpy.linalg.norm(teammate.GetPosition(game) - net_pos)
+                pass_chance = game.PlayerPass(self, teammate, True, 0)
+                should_pass = self.RANDOM_PASS_CHANCE == 0.0 and pass_chance > self.PASS_CHANCE
+                should_pass = should_pass or numpy.random.random() < self.RANDOM_PASS_CHANCE
+                if should_pass:
+                    self.SetAction(game, action)
+                    if verbosity: print('next pass net dist is', net_dist, self.action)
+
+            if self.GetAction(game) == Action.NONE:
+                if verbosity: print('move towards net')
+
+        elif control_player:
+            if numpy.random.random() < self.RANDOM_SKATE_CHANCE:
+                self.SetInput(game, numpy.zeros(2))
+            else:
+                # move towards own goal
+                if verbosity: print('move towards MIDWAY point to opposing controller')
+                target_pos = self.GetOwnNetPos(game)
                 delta = target_pos - self.GetPosition(game)
                 self.SetInput(game, delta)
         else:

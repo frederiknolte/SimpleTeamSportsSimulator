@@ -13,15 +13,14 @@ def naive_action(obs):
 
 
 if __name__ == "__main__":
-    env = STS2Environment(num_home_players=3,
-                          num_away_players=3,
-                          num_home_agents=2,
-                          num_away_agents=2,
-                          with_pygame=True)
+    env = STS2Environment(num_home_SimplePlayer=3,
+                          num_away_SimplePlayer=3,
+                          with_pygame=True,
+                          verbosity=0)
     obs, info = env.reset()
     while True:
         action = naive_action(obs)
-        obs, r, done, info = env.step(action)
+        obs, r, done, info = env.step(None)
         env.render()
 
         if done: break
