@@ -46,6 +46,18 @@ class Physics:
                 if player1 is player2:
                     continue
 
+                # Repulsion so that players don't 'stick' together
+                if numpy.linalg.norm(player1.GetPosition(self.game) - player2.GetPosition(
+                        self.game)) <= self.game.rules.player_radius * 4:
+                    center = (player1.GetPosition(self.game) + player2.GetPosition(
+                        self.game)) * 0.5
+                    for player in [player1, player2]:
+                        delta = (player.GetPosition(self.game) - center) * 2  # Position delta between players (not between player and center)
+                        dist = numpy.linalg.norm(delta)
+                        repulsion_direction = delta / dist
+                        new_vel = player.GetVelocity(self.game) + repulsion_direction * (0.1 / (dist ** 3))
+                        player.SetVelocity(self.game, new_vel)
+
                 if numpy.linalg.norm(player1.GetPosition(self.game) - player2.GetPosition(
                         self.game)) <= self.game.rules.player_radius * 2:
                     control_player = self.game.control.GetControl()
