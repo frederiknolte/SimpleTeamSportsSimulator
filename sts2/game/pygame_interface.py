@@ -412,7 +412,9 @@ class PygameInterface:
 
     def SaveImage(self):
         if self.game_start_time is None:
-            self.game_start_time = "c:\\NHL_Games\\" + datetime.date.today().isoformat() + '_%05d.PNG'
+            date = datetime.date.today().isoformat()
+            os.makedirs(os.path.join('.', 'datasets', date), exist_ok=True)
+            self.game_start_time = os.path.join('.', 'datasets', date, '%05d.PNG')
         surface = pygame.display.get_surface()
         fname = self.game_start_time % self.img_id
         self.img_id += 1
