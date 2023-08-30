@@ -9,8 +9,11 @@ reinforcement data and validating RL and IL methods will be much quicker.
 Once discovered we can apply them to the full title.
 """
 
+import os
 import numpy
 import random
+import datetime
+import h5py
 
 from sts2.game.simulation import Simulation, GameEvent
 from sts2.game.arena import Arena
@@ -24,9 +27,10 @@ from sts2.game.settings import GamePhase, STS2Event, Outputs, TeamSide
 class Game(Simulation):
     GOAL_REWARD = 1.0
 
-    def __init__(self, players, rules=None, verbosity=0, client_adapter_cls=None):
+    def __init__(self, players, rules=None, verbosity=0, save_states=False, client_adapter_cls=None):
         super(Game, self).__init__(players, verbosity)
         self.client_adapter = client_adapter_cls(self)
+        self.save_states = save_states
         self.team_players = []
         self.team_players.append([x for x in players if x.team_side == TeamSide.HOME])
         self.team_players.append([x for x in players if x.team_side == TeamSide.AWAY])
@@ -146,7 +150,8 @@ class Game(Simulation):
             self.SetGamePhase(GamePhase.GAME_OVER, verbosity)
             self.PhaseUpdate(verbosity)
         elif self.GetGamePhase() == GamePhase.GAME_OVER:
-            pass
+            if self.save_states:
+                self.SaveStateHistory()
         else:
             raise TypeError('unknown game phase', self.GetGamePhase())
 
@@ -383,6 +388,18 @@ class Game(Simulation):
 
     def GetHashableGameStateVector(self):
         return self.state.series
+
+    def SaveStateHistory(self):
+        date = datetime.date.today().isoformat()
+        os.makedirs(os.path.join('.', 'datasets', date), exist_ok=True)
+        save_state_path = os.path.join('.', 'datasets', date, 'STATEHISTORY.h5')
+        state_history = [state.state.to_dict() for state in self.game_state_history]
+
+        with h5py.File(save_state_path, "w") as hf:
+            for i in range(len(state_history)):
+                grp = hf.create_group(str(i))
+                for key in state_history[i].keys():
+                    grp.create_dataset(key, data=state_history[i][key])
 
     def DrawArena(self, vb):
         if not vb:

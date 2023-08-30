@@ -242,9 +242,9 @@ class GamePad(Controller):
 
 class PygameInterface:
     img_id = 0  # Mas
-    game_start_time = None  # Mas
+    save_image_path = None  # Mas
 
-    def __init__(self, game, settings, replay=False):
+    def __init__(self, game, save_states, settings, replay=False):
         # os.environ['SDL_VIDEO_WINDOW_POS'] = str(0) + "," + str(0)
         # os.environ['SDL_VIDEO_CENTERED'] = '1'
         pygame.init()
@@ -252,6 +252,7 @@ class PygameInterface:
         pygame.display.set_caption("Simple Sports Simulation")
 
         self.game = game
+        self.save_states = save_states
         self.settings = settings
         self.gamepads = GamePads(settings)
         self.keyboard_controller = KeyboardController(0, settings)
@@ -408,15 +409,16 @@ class PygameInterface:
     def HandleGameReplayFrame(self):
         self.Draw(self._frame)
         self.UpdatePause(self._frame)
-        # self.SaveImage()
+        if self.save_states:
+            self.SaveImage()
 
     def SaveImage(self):
-        if self.game_start_time is None:
+        if self.save_image_path is None:
             date = datetime.date.today().isoformat()
-            os.makedirs(os.path.join('.', 'datasets', date), exist_ok=True)
-            self.game_start_time = os.path.join('.', 'datasets', date, '%05d.PNG')
+            os.makedirs(os.path.join('.', 'datasets', date), exist_ok=False)
+            self.save_image_path = os.path.join('.', 'datasets', date, '%05d.PNG')
         surface = pygame.display.get_surface()
-        fname = self.game_start_time % self.img_id
+        fname = self.save_image_path % self.img_id
         self.img_id += 1
         pygame.image.save(surface, fname)
 

@@ -41,7 +41,8 @@ def get_game(timeout_ticks,
              num_away_DefensivePlayer,
              num_home_ShyPlayer,
              num_away_ShyPlayer,
-             verbosity=0):
+             verbosity=0,
+             save_states=False):
     # Prepare players
     i = 0
     home_players = []
@@ -96,11 +97,11 @@ def get_game(timeout_ticks,
     rules.max_tick = int(timeout_ticks)
 
     return Game(home_players + away_players, rules, verbosity=verbosity,
-                client_adapter_cls=ClientAdapter)
+                save_states=save_states, client_adapter_cls=ClientAdapter)
 
 
-def get_pygame(game):
-    return PygameInterface(game, INTERFACE_SETTINGS)
+def get_pygame(game, save_states):
+    return PygameInterface(game, save_states, INTERFACE_SETTINGS)
 
 
 class STS2Environment(object):
@@ -123,6 +124,7 @@ class STS2Environment(object):
             num_home_ShyPlayer=0,
             num_away_ShyPlayer=0,
             with_pygame=False,
+            save_states=False,
             timeout_ticks=1e10,
             verbosity=0):
 
@@ -142,9 +144,10 @@ class STS2Environment(object):
             num_away_DefensivePlayer=num_away_DefensivePlayer,
             num_home_ShyPlayer=num_home_ShyPlayer,
             num_away_ShyPlayer=num_away_ShyPlayer,
-            verbosity=verbosity)
+            verbosity=verbosity,
+            save_states=save_states)
 
-        self.pygame = get_pygame(self.game) if with_pygame else None
+        self.pygame = get_pygame(self.game, save_states) if with_pygame else None
 
     def seed(self, seed):
         random.seed(seed)

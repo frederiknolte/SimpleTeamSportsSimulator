@@ -26,6 +26,8 @@ if __name__ == "__main__":
                           num_home_ShyPlayer=0,
                           num_away_ShyPlayer=0,
                           with_pygame=True,
+                          save_states=False,
+                          timeout_ticks=1e10,
                           verbosity=0)
     obs, info = env.reset()
     while True:
