@@ -443,6 +443,7 @@ class PygameInterface:
         self.DrawRink(game_state)
         self.DrawPlayers(game_state)
         self.DrawActions(game_state)
+        self.DrawBall(game_state)
 
         self.text_print.Reset()
         # if self.replay_frame > -1:
@@ -527,6 +528,19 @@ class PygameInterface:
                 self.text_print.Print(name, (x, z), align='center')
 
         # i += 1 # TODO: player names in game state
+
+    def DrawBall(self, game_state):
+        if 'ball_in_air' in game_state.keys() and game_state['ball_in_air']:
+            colour = pygame.Color('pink')
+            posx = game_state['ball_pos_x']
+            posz = game_state['ball_pos_z']
+            x, z = self.GameCoordToScreenCoord(posx, posz)
+            x, z = int(x), int(z)
+            draw_radius = self.game.rules.ball_radius
+
+            pygame.draw.circle(self.screen, colour, (x, z),
+                               int(draw_radius * self.settings.x_scale), 0)
+            self.text_print.Print('ball', (x, z), align='center')
 
     def DrawActions(self, game_state):
         width = 3

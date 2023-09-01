@@ -9,7 +9,7 @@ class Rules:
         NONE = "NONE"
         CROSSOVER_CONSTRAINT = "CROSSOVER_CONSTRAINT"
 
-    def __init__(self, max_tick, arena_size, player_radius, max_vel, max_accel,
+    def __init__(self, max_tick, arena_size, player_radius, ball_radius, max_vel, max_accel,
                  min_intercept_chance, max_intercept_chance, max_intercept_dist,
                  player_intercept_speed, check_stun_time, shot_response_time, pass_response_time,
                  receive_response_time, shot_distance_accuracy_scale, enable_player_collisions,
@@ -17,6 +17,7 @@ class Rules:
         self.max_tick = max_tick
         self.arena_size = arena_size
         self.player_radius = player_radius
+        self.ball_radius = ball_radius
         self.max_vel = max_vel
         self.max_accel = max_accel
         self.min_intercept_chance = min_intercept_chance
@@ -34,7 +35,7 @@ class Rules:
 
 
 PACMAN_GAME_RULES = Rules(
-    max_tick=15 * 20, arena_size=(18, 36), player_radius=0.75, max_vel=0.5,
+    max_tick=15 * 20, arena_size=(18, 36), player_radius=0.75, ball_radius=0.4, max_vel=0.5,
     max_accel=0.05, min_intercept_chance=0.0, max_intercept_chance=0.9,
     max_intercept_dist=5.0, player_intercept_speed=0.1, check_stun_time=20,
     shot_response_time=10, pass_response_time=10, receive_response_time=15,
@@ -43,7 +44,7 @@ PACMAN_GAME_RULES = Rules(
     layout_constraint=Rules.LayoutConstraint.CROSSOVER_CONSTRAINT)
 
 SIMPLE_GAME_RULES = Rules(
-    max_tick=15 * 30, arena_size=(18, 36), player_radius=0.75, max_vel=0.5,
+    max_tick=15 * 30, arena_size=(18, 36), player_radius=0.75, ball_radius=0.4, max_vel=0.5,
     max_accel=0.05, min_intercept_chance=0.0, max_intercept_chance=0.9,
     max_intercept_dist=5.0, player_intercept_speed=0.1, check_stun_time=20,
     shot_response_time=10, pass_response_time=10, receive_response_time=15,
@@ -52,7 +53,7 @@ SIMPLE_GAME_RULES = Rules(
     layout_constraint=Rules.LayoutConstraint.NONE)
 
 STANDARD_GAME_RULES = Rules(
-    max_tick=15 * 30, arena_size=(18, 36), player_radius=0.75, max_vel=0.5,
+    max_tick=15 * 30, arena_size=(18, 36), player_radius=0.75, ball_radius=0.4, max_vel=0.5,
     max_accel=0.05, min_intercept_chance=0.5, max_intercept_chance=1.0,
     max_intercept_dist=3.5, player_intercept_speed=0.05, check_stun_time=20,
     shot_response_time=10, pass_response_time=10, receive_response_time=15,
@@ -61,7 +62,7 @@ STANDARD_GAME_RULES = Rules(
     layout_constraint=Rules.LayoutConstraint.NONE)
 
 PREDICTABLE_INTERCEPTION_GAME_RULES = Rules(
-    max_tick=15 * 30, arena_size=(18, 36), player_radius=0.75, max_vel=0.5,
+    max_tick=15 * 30, arena_size=(18, 36), player_radius=0.75, ball_radius=0.4, max_vel=0.5,
     max_accel=0.05, min_intercept_chance=1.0, max_intercept_chance=1.0,
     max_intercept_dist=2.5, player_intercept_speed=0.0, check_stun_time=20,
     shot_response_time=10, pass_response_time=10, receive_response_time=15,
