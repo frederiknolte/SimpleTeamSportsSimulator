@@ -11,11 +11,12 @@ Once discovered we can apply them to the full title.
 
 import os
 import numpy
+import pandas as pd
 import random
 import datetime
-import h5py
+import json
 
-from sts2.game.simulation import Simulation, GameEvent
+from sts2.game.simulation import Simulation, GameEvent, GameHistoryEntry
 from sts2.game.arena import Arena
 from sts2.game.control import Control
 from sts2.game.game_state import GameState, Action
@@ -392,14 +393,25 @@ class Game(Simulation):
     def SaveStateHistory(self):
         date = datetime.date.today().isoformat()
         os.makedirs(os.path.join('.', 'datasets', date), exist_ok=True)
-        save_state_path = os.path.join('.', 'datasets', date, 'STATEHISTORY.h5')
+        save_state_path = os.path.join('.', 'datasets', date, 'STATEHISTORY.json')
         state_history = [state.state.to_dict() for state in self.game_state_history]
 
-        with h5py.File(save_state_path, "w") as hf:
-            for i in range(len(state_history)):
-                grp = hf.create_group(str(i))
-                for key in state_history[i].keys():
-                    grp.create_dataset(key, data=state_history[i][key])
+        with open(save_state_path, 'w') as fout:
+            json.dump(state_history, fout)
+
+    def LoadStateHistory(self, load_path):
+        with open(load_path, 'r') as fin:
+            state_history = json.load(fin)
+
+        for history_entry in state_history:
+            h = GameHistoryEntry(tick=None,
+                                 state=pd.Series(history_entry),
+                                 player_identity_list=None,
+                                 player_policy_list=None,
+                                 player_action_list=None,
+                                 player_value_estimate_list=None,
+                                 player_reward_list=None)
+            self.game_state_history.append(h)
 
     def DrawArena(self, vb):
         if not vb:
