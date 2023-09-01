@@ -1,5 +1,6 @@
 # Copyright (C) 2020 Electronic Arts Inc.  All rights reserved.
 
+import sys
 import numpy
 
 from sts2.game.game_state import GameState, Action

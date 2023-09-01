@@ -409,7 +409,7 @@ class PygameInterface:
     def HandleGameReplayFrame(self):
         self.Draw(self._frame)
         self.UpdatePause(self._frame)
-        if self.save_states:
+        if self.SaveFrame():
             self.SaveImage()
 
     def SaveImage(self):
@@ -588,6 +588,9 @@ class PygameInterface:
 
     def AllowSimulation(self):
         return self.pause_frames <= 0
+
+    def SaveFrame(self):
+        return self.save_states and self.AllowSimulation() and self._frame.current_phase != 'GAME_OVER'
 
     def Quit(self):
         pygame.quit()
