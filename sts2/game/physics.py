@@ -129,8 +129,8 @@ class Physics:
                 if closest_dist > self.game.rules.max_intercept_dist:
                     prob = 0.0
                 else:
-                    prob = (self.game.rules.max_intercept_chance - self.game.rules.min_intercept_chance) \
-                           * closest_dist / self.game.rules.max_intercept_dist + self.game.rules.min_intercept_chance
+                    prob = self.game.rules.max_intercept_chance - (self.game.rules.max_intercept_chance - self.game.rules.min_intercept_chance) \
+                           * closest_dist / self.game.rules.max_intercept_dist
 
                 through_chance *= 1.0 - prob
 
