@@ -303,7 +303,7 @@ class PygameInterface:
         wants_quit = False
         replay_continue_toggle = False
         replay_scrub_speed = 0.0
-        replay_step = 0
+        replay_step = 1
 
         for gamepad in self.gamepads.GetGamepads():
             replay_continue_toggle = replay_continue_toggle or gamepad.WantsToggleReplayContinue()
@@ -544,6 +544,8 @@ class PygameInterface:
 
     def DrawActions(self, game_state):
         width = 3
+        if self.IsInReplay():  # TODO
+            return
 
         for team_side in TeamSide.TEAMSIDES:
             team_prefix = GameState.TEAMSIDE_PREFIXES[team_side]
