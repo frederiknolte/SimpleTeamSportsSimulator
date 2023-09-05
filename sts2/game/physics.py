@@ -8,11 +8,11 @@ class Physics:
         self.game = game
 
     def Update(self, verbosity):
-        self.BoardCollisionUpdate(max(0, verbosity - 1))
+        self.BoardPlayerCollisionUpdate(max(0, verbosity - 1))
         self.PlayerCollisionUpdate(max(0, verbosity - 1))
 
-    def BoardCollisionUpdate(self, verbosity):
-        # rectify collisions against boards
+    def BoardPlayerCollisionUpdate(self, verbosity):
+        # rectify player collisions against boards
         arena = self.game.arena
 
         radius = self.game.rules.player_radius
@@ -39,6 +39,39 @@ class Physics:
 
             player.SetPosition(self.game, position)
             player.SetVelocity(self.game, velocity)
+
+    def BoardBallCollisionUpdate(self, verbosity, depth=0):
+        # rectify ball collisions against boards
+        arena = self.game.arena
+
+        radius = self.game.rules.ball_radius
+        min_x = arena.min_x + radius
+        max_x = arena.max_x - radius
+        min_z = arena.min_z + radius
+        max_z = arena.max_z - radius
+
+        position = self.game.state.GetBallPosition()
+        velocity = self.game.state.GetBallVelocity()
+
+        if position[0] < min_x:
+            position[0] += 2 * (min_x - position[0])
+            velocity[0] = -velocity[0]
+        if position[0] > max_x:
+            position[0] += 2 * (max_x - position[0])
+            velocity[0] = -velocity[0]
+        if position[1] < min_z:
+            position[1] += 2 * (min_z - position[1])
+            velocity[1] = -velocity[1]
+        if position[1] > max_z:
+            position[1] += 2 * (max_z - position[1])
+            velocity[1] = -velocity[1]
+
+        self.game.state.SetBallPosition(position)
+        self.game.state.SetBallVelocity(velocity)
+
+        # Call recursively to handle double bounces
+        if depth < 1:
+            self.BoardBallCollisionUpdate(verbosity, depth + 1)
 
     def PlayerCollisionUpdate(self, verbosity):
         for player1 in self.game.players:
@@ -103,8 +136,6 @@ class Physics:
                 self.game.tick, source[0], source[1], target[0], target[1]))
 
         through_chance = 1.0
-        intercepting_player = None
-        shortest_intercept = traj_distance + 1.0
         for player in players:
             # project player onto trajectory to find unconstrained intercept point
             player_source_delta = player.GetPosition(self.game) - source
@@ -134,29 +165,14 @@ class Physics:
 
                 through_chance *= 1.0 - prob
 
-                if closest_dist < shortest_intercept:
-                    r = numpy.random.random()
-                    # prob = 1.0 - self.game.rules.intercept_scale * player_intercept_dist / traj_distance
-                    if r < prob:
-                        intercepting_player = player
-                        shortest_intercept = closest_dist
-                        if verbosity: print(
-                            'player %s random %f < probability %f so intercepted' % (
-                                player.name, r, prob), 'closest_dist', closest_dist,
-                            'player_intercept_dist', player_intercept_dist, 'intercept_source_dist',
-                            intercept_source_dist)
-                    else:
-                        if verbosity: print(
-                            'player %s random %f > probability %f so not intercepted' % (
-                                player.name, r, prob), 'closest_dist', closest_dist,
-                            'player_intercept_dist', player_intercept_dist, 'intercept_source_dist',
-                            intercept_source_dist)
-                else:
-                    if verbosity: print(
-                        'player %s player_intercept_dist %f >= shortest_intercept %f so skipping' % (
-                            player.name, player_intercept_dist, shortest_intercept))
             else:
                 if verbosity: print('player %s intercept_source_dist %f is behind' % (
                     player.name, intercept_source_dist))
 
-        return intercepting_player, through_chance
+        return through_chance
+
+    def IntersectionTest(self, A, B, C, D):
+        return self.ccw(A, C, D) != self.ccw(B, C, D) and self.ccw(A, B, C) != self.ccw(A, B, D)
+
+    def ccw(self, A, B, C):
+        return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])

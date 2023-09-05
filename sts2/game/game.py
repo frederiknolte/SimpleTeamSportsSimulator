@@ -47,7 +47,7 @@ class Game(Simulation):
         self.state.SetField(GameState.CURRENT_PHASE, GamePhase.PRE_GAME, init=True)
 
         # More of the MAS additions
-        self.players_by_distance_to_controller_by_team = {}
+        self.players_by_distance_to_ball_by_team = {}
         self.init_exp = 1.0
 
     def CustomTick(self):
@@ -70,11 +70,14 @@ class Game(Simulation):
 
         self.DrawArena(vb)
 
+        self.BallUpdate(vb)
         self.AIUpdate(vb)
         self.LocomotionUpdate(vb)
         self.physics.Update(vb)
         self.ActionUpdate(vb)
         self.RulesUpdate(vb)
+        self.CheckGoal(vb)
+        self.physics.BoardBallCollisionUpdate(verbosity=vb)
 
         if vb:
             print('tick %3d %10s -> %10s' % (
@@ -200,11 +203,10 @@ class Game(Simulation):
         value_estimate = 0.0  # TODO - would come from NN evaluation
         return action_index, policy_vector, value_estimate
 
-    def sort_by_distance_to_controller(self):
+    def sort_by_distance_to_ball(self):
         """ Sort all players by team and distance to the puck owner aka 'controller'. """
         self.players_by_distance_to_controller_by_team = {0: [], 1: []}
-        control_player = self.control.GetControl()
-        puck_position = control_player.GetPosition(self)
+        puck_position = self.state.GetBallPosition()
         for player in self.players:
             dist = numpy.linalg.norm(puck_position - player.GetPosition(self))
             self.players_by_distance_to_controller_by_team[player.team_side].append(
@@ -219,7 +221,7 @@ class Game(Simulation):
         }
 
     def AIUpdate(self, verbosity):
-        self.sort_by_distance_to_controller()
+        self.sort_by_distance_to_ball()
         for i, player in zip(range(len(self.players)), self.players):
             player.Think(self, verbosity)
             self.player_action_list[i], self.player_policy_list[i], self.player_value_estimate_list[
@@ -256,6 +258,41 @@ class Game(Simulation):
     def GetCapableTeamPlayers(self, team):
         return [player for player in self.team_players[team] if player.GetActionTime(self) == 0]
 
+    def BallUpdate(self, vb):
+        if self.control.GetControl() is None:
+            # Ball is traveling in the air
+            # Update possession
+            closest_player = None
+            closest_dist = numpy.infty
+            for player in self.players:
+                if player.GetActionTime(self) <= 0:
+                    diff = self.state.GetBallPosition() - player.GetPosition(self)
+                    dist = numpy.linalg.norm(diff)
+                    if dist <= self.rules.max_intercept_dist and dist < closest_dist:
+                        closest_player = player
+                        closest_dist = dist
+
+            if closest_player is not None:
+                # Ball is caught
+                self.control.GiveControl(closest_player)
+                closest_player.ResponseTime(self, self.rules.receive_response_time)
+                return
+
+            # Update position
+            position = self.state.GetBallPosition()
+            velocity = self.state.GetBallVelocity()
+            position += velocity
+            self.state.SetBallPosition(position)
+            self.state.SetBallVelocity(velocity * self.rules.ball_velocity_decay)
+
+        else:
+            # Ball is in control
+            # Update position
+            control_pos = self.control.GetControl().GetPosition(self)
+            control_vel = self.control.GetControl().GetVelocity(self)
+            self.state.SetBallPosition(control_pos)
+            self.state.SetBallVelocity(control_vel)
+
     def ComputeOnNetChance(self, player):
         net_delta = player.GetAttackingNetPos(self) - player.GetPosition(self)
         net_dir = net_delta / numpy.linalg.norm(net_delta)
@@ -269,54 +306,30 @@ class Game(Simulation):
         if not simulate:
             assert (self.control.GetControl() is player)
 
-        on_net_chance = self.ComputeOnNetChance(player)
-        on_net = random.random() < on_net_chance
+        if self.control.GetControl() is None:
+            return 0.0
 
-        interceptor, through_chance = self.physics.InterceptTest(player.GetPosition(self),
-                                                                 player.GetAttackingNetPos(self),
-                                                                 self.GetCapableTeamPlayers(
-                                                                     TeamSide.Opposite(
-                                                                         self.control.GetControl().team_side)),
-                                                                 max(0, verbosity - 1))
+        on_net_chance = self.ComputeOnNetChance(player)
+
+        through_chance = self.physics.InterceptTest(player.GetPosition(self),
+                                                    player.GetAttackingNetPos(self),
+                                                    self.GetCapableTeamPlayers(
+                                                        TeamSide.Opposite(
+                                                            self.control.GetControl().team_side)),
+                                                    max(0, verbosity - 1))
 
         if not simulate:
             self.game_event_history.AddEvent(
                 GameEvent(self.tick, STS2Event.SHOT, player.name, ''))
 
             player.ResponseTime(self, self.rules.shot_response_time)
-
-            if interceptor:
-                self.game_event_history.AddEvent(
-                    GameEvent(self.tick, STS2Event.SHOT_BLOCK, interceptor.name, player.name))
-                self.control.GiveControl(interceptor)
-                interceptor.ResponseTime(self, self.rules.receive_response_time)
-            else:
-                if on_net:
-                    self.AwardGoal(player)
-                    self.control.Reset(self)
-                else:
-                    self.game_event_history.AddEvent(
-                        GameEvent(self.tick, STS2Event.MISSED_SHOT, player.name, ''))
-
-                    # give possession to closest player
-                    attacking_net_pos = player.GetAttackingNetPos(self)
-                    min_dist = None
-                    rebound_player = None
-                    for player in self.players:
-                        # project player onto trajectory to find unconstrained intercept point
-                        dist = numpy.linalg.norm(player.GetPosition(self) - attacking_net_pos)
-                        if min_dist is None or dist < min_dist:
-                            min_dist = dist
-                            rebound_player = player
-
-                    self.control.GiveControl(rebound_player)
-                    rebound_player.ResponseTime(self, self.rules.receive_response_time)
+            self.SendBall(player.GetAttackingNetPos(self))
 
         return through_chance * on_net_chance
 
     def PlayerPass(self, source_player, target_player, simulate, verbosity):
         assert (self.control.GetControl() is source_player)
-        interceptor, through_chance = self.physics.InterceptTest(source_player.GetPosition(self),
+        through_chance = self.physics.InterceptTest(source_player.GetPosition(self),
                                                                  target_player.GetPosition(self),
                                                                  self.GetCapableTeamPlayers(
                                                                      TeamSide.Opposite(
@@ -325,20 +338,7 @@ class Game(Simulation):
         if not simulate:
             self.game_event_history.AddEvent(
                 GameEvent(self.tick, STS2Event.PASS, source_player.name, target_player.name))
-
-            if interceptor:
-                self.game_event_history.AddEvent(
-                    GameEvent(self.tick, STS2Event.PASS_INTERCEPT, interceptor.name,
-                              source_player.name))
-                self.control.GiveControl(interceptor)
-                interceptor.ResponseTime(self, self.rules.receive_response_time)
-            else:
-                self.game_event_history.AddEvent(
-                    GameEvent(self.tick, STS2Event.PASS_COMPLETE, target_player.name,
-                              source_player.name))
-                self.control.GiveControl(target_player)
-                target_player.ResponseTime(self, self.rules.receive_response_time)
-
+            self.SendBall(target_player.GetPosition(self))
             source_player.ResponseTime(self, self.rules.pass_response_time)
         return through_chance
 
@@ -351,17 +351,34 @@ class Game(Simulation):
         self.control.GiveControl(checking_player)
         checking_player.ResponseTime(self, self.rules.receive_response_time)
 
-    def AwardGoal(self, player):
+    def AwardGoal(self, team_side, verbose):
         self.game_event_history.AddEvent(
-            GameEvent(self.tick, STS2Event.GOAL, player.name, ''))
-        self.SetScore(player.team_side, self.GetScore(player.team_side) + 1)
+            GameEvent(self.tick, STS2Event.GOAL, TeamSide.GetName(team_side), ''))
+        self.SetScore(team_side, self.GetScore(team_side) + 1)
         self.SetGamePhase(GamePhase.STOPPAGE_GOAL)
         for i, p in zip(range(len(self.players)), self.players):
-            if p.team_side == player.team_side:
+            if p.team_side == team_side:
                 self.player_reward_list[i] = self.GOAL_REWARD
             else:
                 self.player_reward_list[i] = -self.GOAL_REWARD
-        # print(self.GetScore(0), self.GetScore(1))
+        if verbose: print(f'Goal by team {TeamSide.GetName(team_side)}.')
+
+    def CheckGoal(self, verbose):
+        ball_pos = self.state.GetBallPosition()
+        arena_side = numpy.sign(ball_pos[1])
+        ball_pos[1] += arena_side * self.rules.ball_radius
+        prev_ball_pos = ball_pos - self.state.GetBallVelocity()
+
+        for team_side in TeamSide.TEAMSIDES:
+            team_net_x = self.state.GetTeamField(team_side, self.state.TEAM_NET_X)
+            team_net_z = self.state.GetTeamField(team_side, self.state.TEAM_NET_Z)
+            left_post = numpy.array([team_net_x - 0.5, team_net_z])
+            right_post = numpy.array([team_net_x + 0.5, team_net_z])
+            goal = self.physics.IntersectionTest(prev_ball_pos, ball_pos, left_post, right_post)
+
+            if goal:
+                self.AwardGoal(team_side, verbose)
+                self.control.Reset(self)
 
     def ActionUpdate(self, verbosity):
         control_player = self.control.GetControl()
@@ -376,6 +393,14 @@ class Game(Simulation):
                         continue
                     if control_player.GetAction(self) is pass_action:
                         self.PlayerPass(control_player, teammate, False, max(0, verbosity - 1))
+
+    def SendBall(self, target_position):
+        self.control.RemoveControl()
+        diff = target_position - self.state.GetBallPosition()
+        length = numpy.linalg.norm(diff)
+        direction = diff / length
+        velocity = direction * self.rules.ball_speed
+        self.state.SetBallVelocity(velocity)
 
     def RulesUpdate(self, verbosity):
         pass
@@ -462,6 +487,10 @@ class Game(Simulation):
                                 numpy.array([x2, z2]) - position) <= self.rules.player_radius:
                             AddCharToArenaString(self.arena, a, ch2, (x2, z2))
                         AddCharToArenaString(self.arena, a, nums, (position[0], position[1]))
+
+        if self.control.GetControl() is None:
+            position = self.state.GetBallPosition()
+            AddCharToArenaString(self.arena, a, 'B', (position[0], position[1]))
 
         s = ''
         for row in a:

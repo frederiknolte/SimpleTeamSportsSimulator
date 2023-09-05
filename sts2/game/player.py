@@ -269,7 +269,10 @@ class SimplePlayer(Player):
                 delta = target_pos - self.GetPosition(game)
                 self.SetInput(game, delta)
         else:
-            if verbosity: print("shouldn't reach here", control_player)
+            if verbosity: print('move towards ball')
+            ball_pos = game.state.GetBallPosition()
+            input = ball_pos - self.GetPosition(game)
+            self.SetInput(game, input)
 
 
 class AdaptedSimplePlayer(Player):
@@ -346,7 +349,10 @@ class AdaptedSimplePlayer(Player):
                 delta = target_pos - self.GetPosition(game)
                 self.SetInput(game, delta)
         else:
-            if verbosity: print("shouldn't reach here", control_player)
+            if verbosity: print('move towards ball')
+            ball_pos = game.state.GetBallPosition()
+            input = ball_pos - self.GetPosition(game)
+            self.SetInput(game, input)
 
 
 class EgoisticPlayer(Player):
@@ -408,7 +414,10 @@ class EgoisticPlayer(Player):
                 delta = target_pos - self.GetPosition(game)
                 self.SetInput(game, delta)
         else:
-            if verbosity: print("shouldn't reach here", control_player)
+            if verbosity: print('move towards ball')
+            ball_pos = game.state.GetBallPosition()
+            input = ball_pos - self.GetPosition(game)
+            self.SetInput(game, input)
 
 
 class AggressivePlayer(Player):
@@ -469,7 +478,10 @@ class AggressivePlayer(Player):
                 delta = target_pos - self.GetPosition(game)
                 self.SetInput(game, delta)
         else:
-            if verbosity: print("shouldn't reach here", control_player)
+            if verbosity: print('move towards ball')
+            ball_pos = game.state.GetBallPosition()
+            input = ball_pos - self.GetPosition(game)
+            self.SetInput(game, input)
 
 
 class DefensivePlayer(Player):
@@ -540,7 +552,10 @@ class DefensivePlayer(Player):
                 delta = target_pos - self.GetPosition(game)
                 self.SetInput(game, delta)
         else:
-            if verbosity: print("shouldn't reach here", control_player)
+            if verbosity: print('move towards ball')
+            ball_pos = game.state.GetBallPosition()
+            input = ball_pos - self.GetPosition(game)
+            self.SetInput(game, input)
 
 
 class ShyPlayer(Player):
@@ -598,7 +613,10 @@ class ShyPlayer(Player):
                 delta = target_pos - self.GetPosition(game)
                 self.SetInput(game, delta)
         else:
-            if verbosity: print("shouldn't reach here", control_player)
+            if verbosity: print('move towards ball')
+            ball_pos = game.state.GetBallPosition()
+            input = ball_pos - self.GetPosition(game)
+            self.SetInput(game, input)
 
 
 class HumanKeyboardPlayer(Player):

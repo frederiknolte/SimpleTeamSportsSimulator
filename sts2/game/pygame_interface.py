@@ -442,7 +442,6 @@ class PygameInterface:
     def Draw(self, game_state):
         self.DrawRink(game_state)
         self.DrawPlayers(game_state)
-        self.DrawActions(game_state)
         self.DrawBall(game_state)
 
         self.text_print.Reset()
@@ -530,7 +529,7 @@ class PygameInterface:
         # i += 1 # TODO: player names in game state
 
     def DrawBall(self, game_state):
-        if 'ball_in_air' in game_state.keys() and game_state['ball_in_air']:
+        if self.game.control.GetControl() is None:
             colour = pygame.Color('pink')
             posx = game_state['ball_pos_x']
             posz = game_state['ball_pos_z']
@@ -541,63 +540,6 @@ class PygameInterface:
             pygame.draw.circle(self.screen, colour, (x, z),
                                int(draw_radius * self.settings.x_scale), 0)
             self.text_print.Print('ball', (x, z), align='center')
-
-    def DrawActions(self, game_state):
-        width = 3
-        if self.IsInReplay():  # TODO
-            return
-
-        for team_side in TeamSide.TEAMSIDES:
-            team_prefix = GameState.TEAMSIDE_PREFIXES[team_side]
-            other_team_prefix = GameState.TEAMSIDE_PREFIXES[
-                TeamSide.Opposite(team_side)]
-            team_players = int(game_state[team_prefix + GameState.TEAM_PLAYERS])
-            control_team = game_state[GameState.CONTROL_TEAM]
-            control_index = game_state[GameState.CONTROL_INDEX]
-            control_posx = game_state[GameState.TEAMSIDE_PREFIXES[control_team] + str(
-                control_index) + GameState.PLAYER_POS_X]
-            control_posz = game_state[GameState.TEAMSIDE_PREFIXES[control_team] + str(
-                control_index) + GameState.PLAYER_POS_Z]
-
-            for player_index in range(team_players):
-                player_action = game_state[
-                    team_prefix + str(player_index) + GameState.PLAYER_ACTION]
-                posx = game_state[team_prefix + str(player_index) + GameState.PLAYER_POS_X]
-                posz = game_state[team_prefix + str(player_index) + GameState.PLAYER_POS_Z]
-
-                if player_action is Action.SHOOT:
-                    colour = pygame.Color('black')
-                    if game_state[GameState.CURRENT_PHASE] != GamePhase.STOPPAGE_GOAL:
-                        colour = pygame.Color('red')
-                        pygame.draw.line(self.screen, pygame.Color('black'),
-                                         self.GameCoordToScreenCoord(posx, posz),
-                                         self.GameCoordToScreenCoord(control_posx, control_posz),
-                                         width)
-
-                    net_posx = game_state[other_team_prefix + GameState.TEAM_NET_X]
-                    net_posz = game_state[other_team_prefix + GameState.TEAM_NET_Z]
-                    pygame.draw.line(self.screen, colour, self.GameCoordToScreenCoord(posx, posz),
-                                     self.GameCoordToScreenCoord(net_posx, net_posz), width)
-                elif player_action in Action.PASSES:
-                    for teammate_index, action in zip(range(team_players), Action.PASSES):
-                        if action is player_action:
-                            teammate_posx = game_state[
-                                team_prefix + str(teammate_index) + GameState.PLAYER_POS_X]
-                            teammate_posz = game_state[
-                                team_prefix + str(teammate_index) + GameState.PLAYER_POS_Z]
-                            colour = pygame.Color('black')
-
-                            has_control = control_team == team_side and control_index == teammate_index
-                            if not has_control:
-                                colour = pygame.Color('red')
-                                pygame.draw.line(self.screen, pygame.Color('black'),
-                                                 self.GameCoordToScreenCoord(posx, posz),
-                                                 self.GameCoordToScreenCoord(control_posx,
-                                                                             control_posz), width)
-                            pygame.draw.line(self.screen, colour,
-                                             self.GameCoordToScreenCoord(posx, posz),
-                                             self.GameCoordToScreenCoord(teammate_posx,
-                                                                         teammate_posz), width)
 
     def Pause(self, pause):
         self.pause_frames = pause

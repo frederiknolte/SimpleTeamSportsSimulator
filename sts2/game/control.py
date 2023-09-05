@@ -16,13 +16,22 @@ class Control:
         index = self.game.team_players[player.team_side].index(player)
         self.game.state.SetField(GameState.CONTROL_INDEX, index)
         self.game.state.SetField(GameState.CONTROL_TEAM, player.team_side)
+        self.game.state.SetBallPosition(self.game.state.GetPlayerPosition(player))
+        self.game.state.SetBallVelocity(self.game.state.GetPlayerVelocity(player))
         self.game.game_event_history.AddEvent(
             GameEvent(self.game.tick, STS2Event.GAIN_CONTROL, player.name, ''))
+
+    def RemoveControl(self):
+        self.game.state.SetField(GameState.CONTROL_TEAM, -1)
+        self.game.state.SetField(GameState.CONTROL_INDEX, -1)
 
     def GetControl(self):
         control_team = int(self.game.state.GetField(GameState.CONTROL_TEAM))
         control_player = int(self.game.state.GetField(GameState.CONTROL_INDEX))
-        return self.game.team_players[control_team][control_player]
+        if control_player != -1 and control_team != -1:
+            return self.game.team_players[control_team][control_player]
+        else:
+            return None
 
     def HasControl(self, player):
         return player is self.GetControl()

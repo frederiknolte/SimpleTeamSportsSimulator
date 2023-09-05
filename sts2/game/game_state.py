@@ -56,6 +56,12 @@ class GameState:
     PLAYER_ACTION = "_action"
     PLAYER_ACTION_TIME = "_action_time"
 
+    # ball properties
+    BALL_POS_X = 'ball_pos_x'
+    BALL_POS_Z = 'ball_pos_z'
+    BALL_VEL_X = 'ball_vel_x'
+    BALL_VEL_Z = 'ball_vel_z'
+
     CONTROL_TEAM = "control_team"
     CONTROL_INDEX = "control_index"
 
@@ -96,6 +102,10 @@ class GameState:
             self.SetPlayerInput(player, numpy.zeros(2))
             self.SetPlayerField(player, self.PLAYER_ACTION, Action.NONE, init=True)
             self.SetPlayerField(player, self.PLAYER_ACTION_TIME, 0, init=True)
+
+        # Set up ball fields
+        self.SetBallPosition(numpy.zeros(2))
+        self.SetBallVelocity(numpy.zeros(2))
 
     def GetSnapshot(self):  # MAS, generic OpenAI-like use
         return {field: self.series[field] for field in self.series.index}
@@ -170,3 +180,19 @@ class GameState:
         prefix = self.GetPlayerFieldPrefix(player)
         self.series[prefix + self.PLAYER_INPUT_X] = pos[0]
         self.series[prefix + self.PLAYER_INPUT_Z] = pos[1]
+
+    def GetBallPosition(self):
+        return numpy.array(
+            [self.series[self.BALL_POS_X], self.series[self.BALL_POS_Z]])
+
+    def SetBallPosition(self, pos):
+        self.series[self.BALL_POS_X] = pos[0]
+        self.series[self.BALL_POS_Z] = pos[1]
+
+    def GetBallVelocity(self):
+        return numpy.array(
+            [self.series[self.BALL_VEL_X], self.series[self.BALL_VEL_Z]])
+
+    def SetBallVelocity(self, pos):
+        self.series[self.BALL_VEL_X] = pos[0]
+        self.series[self.BALL_VEL_Z] = pos[1]
