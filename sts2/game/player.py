@@ -69,34 +69,6 @@ class Player(object):
     def GetAttackDir(self, game):
         return numpy.sign(self.GetAttackingNetPos(game)[1])
 
-    def RunVelocityMotionModel(self, game, desired_vel, action):
-        rules = game.rules
-        position = self.GetPosition(game)
-        velocity = self.GetVelocity(game)
-
-        accel_mag = numpy.linalg.norm(desired_vel)
-        if accel_mag > rules.max_accel:
-            desired_vel = desired_vel / accel_mag
-
-        # scale desired acc by distance between normalized velocity and normalized acceleration
-        norm_vel = velocity / rules.max_vel
-
-        if action != Action.NONE:
-            desired_vel = norm_vel
-
-        actual_accel = (desired_vel - norm_vel) * rules.max_accel
-
-        velocity += actual_accel
-
-        vel_mag = numpy.linalg.norm(velocity)
-        if vel_mag > rules.max_vel:
-            velocity = velocity * rules.max_vel / vel_mag
-
-        position += velocity
-
-        self.SetPosition(game, position)
-        self.SetVelocity(game, velocity)
-
     def RunMotionModel(self, game, input, action_frames):
         # acceleration model
         # i = i * (|i| - v . i)
