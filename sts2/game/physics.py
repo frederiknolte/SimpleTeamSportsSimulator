@@ -139,7 +139,13 @@ class Physics:
         for player in players:
             # project player onto trajectory to find unconstrained intercept point
             player_source_delta = player.GetPosition(self.game) - source
+            # player_source_dist = numpy.linalg.norm(player_source_delta)
             intercept_source_dist = traj_dir.dot(player_source_delta)
+
+            # Player is too close to controller
+            # if player_source_dist < self.game.rules.max_intercept_dist + 0.15:
+            #     through_chance = 0.0
+
             # if behind the trajectory there is no intercept
             if intercept_source_dist > 0.0:
                 # find distance from player to intercept
@@ -156,12 +162,12 @@ class Physics:
                 player_intercept_dist = numpy.linalg.norm(player.GetPosition(self.game) - intercept)
 
                 closest_dist = max(0.0,
-                                   player_intercept_dist - self.game.rules.player_intercept_speed * intercept_source_dist)
-                if closest_dist > self.game.rules.max_intercept_dist:
+                                   player_intercept_dist - self.game.rules.player_intercept_speed * intercept_source_dist / self.game.rules.ball_speed)
+                if closest_dist > 2 * self.game.rules.max_intercept_dist:
                     prob = 0.0
                 else:
                     prob = self.game.rules.max_intercept_chance - (self.game.rules.max_intercept_chance - self.game.rules.min_intercept_chance) \
-                           * closest_dist / self.game.rules.max_intercept_dist
+                           * (1 - 1 / (1 + numpy.e ** (4 * closest_dist - 6.5)))
 
                 through_chance *= 1.0 - prob
 

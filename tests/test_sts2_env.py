@@ -29,6 +29,7 @@ if __name__ == "__main__":
                           save_states=False,
                           timeout_ticks=1e10,
                           verbosity=0)
+    env.seed(42)
     obs, info = env.reset()
     while True:
         action = naive_action(obs)
