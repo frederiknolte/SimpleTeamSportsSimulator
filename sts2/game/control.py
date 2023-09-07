@@ -17,8 +17,10 @@ class Control:
         index = self.game.team_players[player.team_side].index(player)
         self.game.state.SetField(GameState.CONTROL_INDEX, index)
         self.game.state.SetField(GameState.CONTROL_TEAM, player.team_side)
-        self.game.state.SetBallPosition(self.game.state.GetPlayerPosition(player))
-        self.game.state.SetBallVelocity(self.game.state.GetPlayerVelocity(player))
+        control_pos = self.game.state.GetPlayerPosition(player)
+        prev_ball_pos = self.game.state.GetBallPosition()
+        self.game.state.SetBallPosition(control_pos)
+        self.game.state.SetBallVelocity(control_pos - prev_ball_pos)
         self.game.state.SetBallSendDirection(numpy.zeros(2))
         self.game.game_event_history.AddEvent(
             GameEvent(self.game.tick, STS2Event.GAIN_CONTROL, player.name, ''))

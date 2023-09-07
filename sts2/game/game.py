@@ -301,10 +301,10 @@ class Game(Simulation):
         else:
             # Ball is in control
             # Update position
-            control_pos = self.control.GetControl().GetPosition(self)
-            control_vel = self.control.GetControl().GetVelocity(self)
-            self.state.SetBallPosition(control_pos)
-            self.state.SetBallVelocity(control_vel)
+            prev_control_pos = self.control.GetControl().GetPosition(self)
+            prev_ball_pos = self.state.GetBallPosition()
+            self.state.SetBallPosition(prev_control_pos)
+            self.state.SetBallVelocity(prev_control_pos - prev_ball_pos)
             self.state.SetBallMechanism(7)
 
     def ComputeOnNetChance(self, player):
