@@ -120,8 +120,12 @@ class Game(Simulation):
             player.OnPlayStart(self)
 
         self.InitPlayerPositions()
+        self.InitBall()
         self.RandomlyGiveControl()
+
+    def InitBall(self):
         self.state.SetBallMechanism(0)
+        self.state.SetBallSendDirection(numpy.zeros(2))
 
     def GetScore(self, teamside):
         return self.state.GetTeamField(teamside, GameState.TEAM_SCORE)
@@ -282,10 +286,16 @@ class Game(Simulation):
 
             # Update position
             position = self.state.GetBallPosition()
-            velocity = self.state.GetBallVelocity()
+            if numpy.all(self.state.GetBallSendDirection() == 0):
+                # Ball has been traveling for at least one time step
+                velocity = self.state.GetBallVelocity() * self.rules.ball_velocity_decay
+            else:
+                # Ball has been released by controler in previous step but still contains old velocity information on how it got to current step
+                velocity = self.state.GetBallSendDirection() * self.rules.ball_speed
+                self.state.SetBallSendDirection(numpy.zeros(2))
             position += velocity
             self.state.SetBallPosition(position)
-            self.state.SetBallVelocity(velocity * self.rules.ball_velocity_decay)
+            self.state.SetBallVelocity(velocity)
             self.state.SetBallMechanism(8)
 
         else:
@@ -403,8 +413,7 @@ class Game(Simulation):
         diff = target_position - self.state.GetBallPosition()
         length = numpy.linalg.norm(diff)
         direction = diff / length
-        velocity = direction * self.rules.ball_speed
-        self.state.SetBallVelocity(velocity)
+        self.state.SetBallSendDirection(direction)
 
     def RulesUpdate(self, verbosity):
         pass

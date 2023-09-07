@@ -1,4 +1,5 @@
 # Copyright (C) 2020 Electronic Arts Inc.  All rights reserved.
+import numpy
 
 from sts2.game.game_state import GameState
 from sts2.game.settings import STS2Event
@@ -18,6 +19,7 @@ class Control:
         self.game.state.SetField(GameState.CONTROL_TEAM, player.team_side)
         self.game.state.SetBallPosition(self.game.state.GetPlayerPosition(player))
         self.game.state.SetBallVelocity(self.game.state.GetPlayerVelocity(player))
+        self.game.state.SetBallSendDirection(numpy.zeros(2))
         self.game.game_event_history.AddEvent(
             GameEvent(self.game.tick, STS2Event.GAIN_CONTROL, player.name, ''))
 

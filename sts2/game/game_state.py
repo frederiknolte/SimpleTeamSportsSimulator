@@ -62,6 +62,8 @@ class GameState:
     BALL_POS_Z = 'ball_pos_z'
     BALL_VEL_X = 'ball_vel_x'
     BALL_VEL_Z = 'ball_vel_z'
+    BALL_SEND_DIR_X = 'ball_send_dir_x'
+    BALL_SEND_DIR_Z = 'ball_send_dir_z'
     BALL_MECHANISM = 'ball_mechanism'
 
     CONTROL_TEAM = "control_team"
@@ -109,6 +111,7 @@ class GameState:
         # Set up ball fields
         self.SetBallPosition(numpy.zeros(2))
         self.SetBallVelocity(numpy.zeros(2))
+        self.SetBallSendDirection(numpy.zeros(2))
         self.SetBallMechanism(0)
 
     def GetSnapshot(self):  # MAS, generic OpenAI-like use
@@ -214,3 +217,11 @@ class GameState:
     def SetBallVelocity(self, pos):
         self.series[self.BALL_VEL_X] = pos[0]
         self.series[self.BALL_VEL_Z] = pos[1]
+
+    def GetBallSendDirection(self):
+        return numpy.array(
+            [self.series[self.BALL_SEND_DIR_X], self.series[self.BALL_SEND_DIR_Z]])
+
+    def SetBallSendDirection(self, dir):
+        self.series[self.BALL_SEND_DIR_X] = dir[0]
+        self.series[self.BALL_SEND_DIR_Z] = dir[1]
