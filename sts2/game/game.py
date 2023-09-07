@@ -365,6 +365,10 @@ class Game(Simulation):
         # self.control.GiveControl(checking_player)
         # checking_player.ResponseTime(self, self.rules.receive_response_time)
         self.control.RemoveControl()
+        # TODO change ball behaviour after check (ball should go towards checking player, shouldn't it?)
+        # TODO we could also argue that the ball just goes in the previous direction before the controller was tackled.
+        # TODO this would not be relevant anyway most of the time as the checking player would usually be close enough to gain
+        # TODO possession at the next time step
 
     def AwardGoal(self, team_side, verbose):
         self.game_event_history.AddEvent(

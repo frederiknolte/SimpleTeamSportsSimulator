@@ -3,6 +3,8 @@ import json
 import h5py
 import numpy as np
 
+from sts2.game.settings import TeamSide
+
 
 def save_list_dict_h5py(array_dict, fname):
     """Save list of dictionaries containing numpy arrays to h5py file."""
@@ -25,15 +27,31 @@ def save_list_dict_h5py(array_dict, fname):
                     grp.create_dataset(key, data=array_dict[i][key])
 
 
+def preprocess_ball_control_indicator(history):
+    # When losing control of the ball, the team indicator is kept in the ball state for one additional time step.
+    # This way, the ball knows which team to look at to evaluate a possible pass.
+    history[0]['ball_control_id'] = history[0]['control_team']
+    for i in range(1, len(history)):
+        if history[i - 1]['control_team'] != -1 and history[i]['control_team'] == -1 \
+                and history[i - 1]['control_index'] != -1 and history[i]['control_index'] == -1:
+            history[i]['ball_control_id'] = history[i - 1]['ball_control_id']
+        else:
+            history[i]['ball_control_id'] = history[i]['control_team']
+    return history
+
+
 def gather_player_information(state, prefix):
     adapted_state = list()
     num_players = int(state[prefix + '_players'])
     for player_id in range(num_players):
         id = [0, int(prefix == 'home'), int(prefix == 'away')]  # ball/home/away flag
+        team_possession = [0, 0]
+        control_flag = [int(state['control_index'] == player_id and state['control_team'] == TeamSide.GetID(prefix))]
+        action_time = [state[prefix + str(player_id) + '_action_time']]
         position = [state[prefix + str(player_id) + '_pos_x'], state[prefix + str(player_id) + '_pos_z']]
         velocity = [state[prefix + str(player_id) + '_vel_x'], state[prefix + str(player_id) + '_vel_z']]
         mechanism = [state[prefix + str(player_id) + '_mechanism']]
-        adapted_state.append(id + position + velocity + mechanism)  # mechanism must always be added last
+        adapted_state.append(id + team_possession + control_flag + action_time + position + velocity + mechanism)  # mechanism must always be added last
     return adapted_state
 
 
@@ -44,6 +62,8 @@ if __name__ == "__main__":
 
     with open(PATH, 'r') as fin:
         json_file = json.load(fin)
+
+    json_file = preprocess_ball_control_indicator(json_file)
 
     # Separate games
     state_history = [[]]
@@ -61,10 +81,13 @@ if __name__ == "__main__":
 
             # Ball
             id = [1, 0, 0]  # ball/home/away flag
+            team_possession = [int(state['ball_control_id'] == 0), int(state['ball_control_id'] == 1)]
+            control_flag = [0]
+            action_time = [0]
             position = [state['ball_pos_x'], state['ball_pos_z']]
             velocity = [state['ball_vel_x'], state['ball_vel_z']]
             mechanism = [state['ball_mechanism']]
-            adapted_state.append(id + position + velocity + mechanism)  # mechanism must always be added last
+            adapted_state.append(id + team_possession + control_flag + action_time + position + velocity + mechanism)  # mechanism must always be added last
 
             # Players
             adapted_state.extend(gather_player_information(state, 'home'))

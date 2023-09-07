@@ -14,6 +14,11 @@ class TeamSide:
     def Opposite(side):
         return TeamSide.AWAY - side
 
+    @staticmethod
+    def GetID(side):
+        assert side in ["home", "away"]
+        return int(side == "away")
+
 
 class GamePhase:
     PRE_GAME = "PRE_GAME"
