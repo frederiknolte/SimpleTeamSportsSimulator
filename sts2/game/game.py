@@ -362,8 +362,9 @@ class Game(Simulation):
             GameEvent(self.tick, STS2Event.CHECK, checking_player.name, control_player.name))
 
         control_player.Stun(self, self.rules.check_stun_time)
-        self.control.GiveControl(checking_player)
-        checking_player.ResponseTime(self, self.rules.receive_response_time)
+        # self.control.GiveControl(checking_player)
+        # checking_player.ResponseTime(self, self.rules.receive_response_time)
+        self.control.RemoveControl()
 
     def AwardGoal(self, team_side, verbose):
         self.game_event_history.AddEvent(
