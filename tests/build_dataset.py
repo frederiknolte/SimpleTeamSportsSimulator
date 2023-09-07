@@ -32,13 +32,14 @@ def gather_player_information(state, prefix):
         id = [0, int(prefix == 'home'), int(prefix == 'away')]  # ball/home/away flag
         position = [state[prefix + str(player_id) + '_pos_x'], state[prefix + str(player_id) + '_pos_z']]
         velocity = [state[prefix + str(player_id) + '_vel_x'], state[prefix + str(player_id) + '_vel_z']]
-        adapted_state.append(id + position + velocity)
+        mechanism = [state[prefix + str(player_id) + '_mechanism']]
+        adapted_state.append(id + position + velocity + mechanism)  # mechanism must always be added last
     return adapted_state
 
 
 if __name__ == "__main__":
 
-    PATH = 'datasets/2023-09-05-2/STATEHISTORY.json'
+    PATH = 'datasets/2023-09-07/STATEHISTORY.json'
     NEW_PATH = os.path.join(*PATH.split('/')[:-1], 'dataset.h5')
 
     with open(PATH, 'r') as fin:
@@ -62,7 +63,8 @@ if __name__ == "__main__":
             id = [1, 0, 0]  # ball/home/away flag
             position = [state['ball_pos_x'], state['ball_pos_z']]
             velocity = [state['ball_vel_x'], state['ball_vel_z']]
-            adapted_state.append(id + position + velocity)
+            mechanism = [state['ball_mechanism']]
+            adapted_state.append(id + position + velocity + mechanism)  # mechanism must always be added last
 
             # Players
             adapted_state.extend(gather_player_information(state, 'home'))
@@ -75,9 +77,14 @@ if __name__ == "__main__":
     dataset = []
     for episode in adapted_state_history:
         sample = dict()
-        sample['action'] = np.zeros(len(episode) - 1).astype(np.int64)
-        sample['obs'] = np.array(episode[:-1])
-        sample['next_obs'] = np.array(episode[1:])
+
+        numpy_episode = np.array(episode)
+        num_steps, num_obj = numpy_episode.shape[:2]
+        sample['action'] = np.zeros(num_steps - 1).astype(np.int64)
+        sample['obs'] = numpy_episode[:-1, ..., :-1]
+        sample['next_obs'] = numpy_episode[1:, ..., :-1]
+        sample['info'] = {f'{i}_mechanism': numpy_episode[1:, i, -1] for i in range(num_obj)}
+
         dataset.append(sample)
 
     save_list_dict_h5py(dataset, NEW_PATH)

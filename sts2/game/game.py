@@ -121,6 +121,7 @@ class Game(Simulation):
 
         self.InitPlayerPositions()
         self.RandomlyGiveControl()
+        self.state.SetBallMechanism(0)
 
     def GetScore(self, teamside):
         return self.state.GetTeamField(teamside, GameState.TEAM_SCORE)
@@ -275,6 +276,7 @@ class Game(Simulation):
             if closest_player is not None:
                 # Ball is caught
                 self.control.GiveControl(closest_player)
+                self.state.SetBallMechanism(7)
                 closest_player.ResponseTime(self, self.rules.receive_response_time)
                 return
 
@@ -284,6 +286,7 @@ class Game(Simulation):
             position += velocity
             self.state.SetBallPosition(position)
             self.state.SetBallVelocity(velocity * self.rules.ball_velocity_decay)
+            self.state.SetBallMechanism(8)
 
         else:
             # Ball is in control
@@ -292,6 +295,7 @@ class Game(Simulation):
             control_vel = self.control.GetControl().GetVelocity(self)
             self.state.SetBallPosition(control_pos)
             self.state.SetBallVelocity(control_vel)
+            self.state.SetBallMechanism(7)
 
     def ComputeOnNetChance(self, player):
         net_delta = player.GetAttackingNetPos(self) - player.GetPosition(self)

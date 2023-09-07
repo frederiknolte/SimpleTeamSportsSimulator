@@ -25,6 +25,7 @@ class Player(object):
         self.SetPosition(game, numpy.zeros(2))
         self.SetVelocity(game, numpy.zeros(2))
         self.SetInput(game, numpy.zeros(2))
+        self.SetMechanism(game, 0)
 
     def ClearActionAndTime(self, game):
         self.SetAction(game, Action.NONE)
@@ -47,6 +48,12 @@ class Player(object):
 
     def SetInput(self, game, input):
         game.state.SetPlayerInput(self, input)
+
+    def GetMechanism(self, game):
+        return game.state.GetPlayerMechanism(self)
+
+    def SetMechanism(self, game, mechanism):
+        game.state.SetPlayerMechanism(self, mechanism)
 
     def GetAction(self, game):
         return game.state.GetPlayerField(self, GameState.PLAYER_ACTION)
@@ -275,6 +282,7 @@ class AdaptedSimplePlayer(Player):
             net_delta = net_pos - self.GetPosition(game)
             # move towards net
             self.SetInput(game, net_delta)
+            self.SetMechanism(game, 1)
             net_dist = numpy.linalg.norm(net_delta)
 
             shoot_dist = self.SHOOT_ARENA_DIST * numpy.linalg.norm(
@@ -313,6 +321,7 @@ class AdaptedSimplePlayer(Player):
                 # just move up arena
                 input = net_pos - self.GetPosition(game)
                 self.SetInput(game, input)
+                self.SetMechanism(game, 1)
             else:
                 # move towards midway point between opposing controller and own goal
                 if verbosity: print('move towards MIDWAY point to opposing controller')
@@ -320,11 +329,13 @@ class AdaptedSimplePlayer(Player):
                     game) + control_player.GetAttackingNetPos(game)) * 0.5
                 delta = target_pos - self.GetPosition(game)
                 self.SetInput(game, delta)
+                self.SetMechanism(game, 3)
         else:
             if verbosity: print('move towards ball')
             ball_pos = game.state.GetBallPosition()
             input = ball_pos - self.GetPosition(game)
             self.SetInput(game, input)
+            self.SetMechanism(game, 6)
 
 
 class EgoisticPlayer(Player):
@@ -355,6 +366,7 @@ class EgoisticPlayer(Player):
             net_delta = net_pos - self.GetPosition(game)
             # move towards net
             self.SetInput(game, net_delta)
+            self.SetMechanism(game, 1)
             net_dist = numpy.linalg.norm(net_delta)
 
             shoot_dist = self.SHOOT_ARENA_DIST * numpy.linalg.norm(
@@ -378,6 +390,7 @@ class EgoisticPlayer(Player):
                 # move towards control player
                 input = control_player.GetPosition(game) - self.GetPosition(game)
                 self.SetInput(game, input)
+                self.SetMechanism(game, 4)
             else:
                 # move towards midway point between opposing controller and own goal
                 if verbosity: print('move towards MIDWAY point to opposing controller')
@@ -385,11 +398,13 @@ class EgoisticPlayer(Player):
                     game) + control_player.GetAttackingNetPos(game)) * 0.5
                 delta = target_pos - self.GetPosition(game)
                 self.SetInput(game, delta)
+                self.SetMechanism(game, 3)
         else:
             if verbosity: print('move towards ball')
             ball_pos = game.state.GetBallPosition()
             input = ball_pos - self.GetPosition(game)
             self.SetInput(game, input)
+            self.SetMechanism(game, 6)
 
 
 class AggressivePlayer(Player):
@@ -420,6 +435,7 @@ class AggressivePlayer(Player):
             net_delta = net_pos - self.GetPosition(game)
             # move towards net
             self.SetInput(game, net_delta)
+            self.SetMechanism(game, 1)
             net_dist = numpy.linalg.norm(net_delta)
 
             shoot_dist = self.SHOOT_ARENA_DIST * numpy.linalg.norm(
@@ -443,17 +459,20 @@ class AggressivePlayer(Player):
                 # just move up arena
                 input = net_pos - self.GetPosition(game)
                 self.SetInput(game, input)
+                self.SetMechanism(game, 1)
             else:
                 # move towards opposing controller
                 if verbosity: print('move towards opposing controller')
                 target_pos = control_player.GetPosition(game)
                 delta = target_pos - self.GetPosition(game)
                 self.SetInput(game, delta)
+                self.SetMechanism(game, 4)
         else:
             if verbosity: print('move towards ball')
             ball_pos = game.state.GetBallPosition()
             input = ball_pos - self.GetPosition(game)
             self.SetInput(game, input)
+            self.SetMechanism(game, 6)
 
 
 class DefensivePlayer(Player):
@@ -484,6 +503,7 @@ class DefensivePlayer(Player):
             net_delta = net_pos - self.GetPosition(game)
             # move towards net
             self.SetInput(game, net_delta)
+            self.SetMechanism(game, 1)
             net_dist = numpy.linalg.norm(net_delta)
 
             shoot_dist = self.SHOOT_ARENA_DIST * numpy.linalg.norm(
@@ -523,11 +543,13 @@ class DefensivePlayer(Player):
                 target_pos = self.GetOwnNetPos(game)
                 delta = target_pos - self.GetPosition(game)
                 self.SetInput(game, delta)
+                self.SetMechanism(game, 5)
         else:
             if verbosity: print('move towards ball')
             ball_pos = game.state.GetBallPosition()
             input = ball_pos - self.GetPosition(game)
             self.SetInput(game, input)
+            self.SetMechanism(game, 6)
 
 
 class ShyPlayer(Player):
@@ -558,6 +580,7 @@ class ShyPlayer(Player):
             net_delta = net_pos - self.GetPosition(game)
             # move away from net
             self.SetInput(game, -net_delta)
+            self.SetMechanism(game, 2)
 
             for teammate, action in zip(game.team_players[self.team_side], Action.PASSES):
                 if teammate is self:
@@ -584,11 +607,13 @@ class ShyPlayer(Player):
                 target_pos = self.GetOwnNetPos(game)
                 delta = target_pos - self.GetPosition(game)
                 self.SetInput(game, delta)
+                self.SetMechanism(game, 5)
         else:
             if verbosity: print('move towards ball')
             ball_pos = game.state.GetBallPosition()
             input = ball_pos - self.GetPosition(game)
             self.SetInput(game, input)
+            self.SetMechanism(game, 6)
 
 
 class HumanKeyboardPlayer(Player):
