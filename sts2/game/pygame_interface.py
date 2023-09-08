@@ -280,6 +280,9 @@ class PygameInterface:
 
     def GetNextGameFrame(self):
         if self.replay_frame >= 0:
+
+            replay_state = self.game.game_state_history[self.replay_frame].state
+
             # we are in replay
             if self.pause_frames == 0:
                 self.replay_frame += int(numpy.round(self.replay_speed))
@@ -288,7 +291,7 @@ class PygameInterface:
             self.replay_frame = numpy.clip(self.replay_frame, 0,
                                            len(self.game.game_state_history) - 1)
 
-            return self.game.game_state_history[self.replay_frame].state
+            return replay_state
 
         # we are in live game
         if self.game.IsSimulationComplete():
