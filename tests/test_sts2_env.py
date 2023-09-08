@@ -1,6 +1,7 @@
 # Copyright (C) 2020 Electronic Arts Inc.  All rights reserved.
 
 import random
+import time
 from sts2.environment import STS2Environment
 
 
@@ -31,9 +32,13 @@ if __name__ == "__main__":
                           verbosity=0)
     env.seed(42)
     obs, info = env.reset()
+
+    start_time = time.time()
     while True:
         action = naive_action(obs)
         obs, r, done, info = env.step(None)
         env.render()
 
         if done: break
+
+    print(f'Runtime: {time.time() - start_time} seconds.')
