@@ -42,6 +42,8 @@ def preprocess_ball_control_indicator(history):
 
 def gather_player_information(state, prefix):
     adapted_state = list()
+    state_info = list()
+
     num_players = int(state[prefix + '_players'])
     for player_id in range(num_players):
         id = [0, int(prefix == 'home'), int(prefix == 'away')]  # ball/home/away flag
@@ -50,9 +52,12 @@ def gather_player_information(state, prefix):
         action_time = [state[prefix + str(player_id) + '_action_time']]
         position = [state[prefix + str(player_id) + '_pos_x'], state[prefix + str(player_id) + '_pos_z']]
         velocity = [state[prefix + str(player_id) + '_vel_x'], state[prefix + str(player_id) + '_vel_z']]
+        adapted_state.append(id + team_possession + control_flag + action_time + position + velocity)  # mechanism must always be added last
+
         mechanism = [state[prefix + str(player_id) + '_mechanism']]
-        adapted_state.append(id + team_possession + control_flag + action_time + position + velocity + mechanism)  # mechanism must always be added last
-    return adapted_state
+        action = [state[prefix + str(player_id) + '_action']]
+        state_info.append(mechanism + action)
+    return adapted_state, state_info
 
 
 if __name__ == "__main__":
@@ -74,10 +79,13 @@ if __name__ == "__main__":
     state_history.pop(-1)  # Remove unfinished/empty episode
 
     adapted_state_history = list()
+    history_info = list()
     for episode in state_history:
         adapted_episode = list()
+        episode_info = list()
         for state in episode:
             adapted_state = list()
+            state_info = list()
 
             # Ball
             id = [1, 0, 0]  # ball/home/away flag
@@ -86,27 +94,44 @@ if __name__ == "__main__":
             action_time = [0]
             position = [state['ball_pos_x'], state['ball_pos_z']]
             velocity = [state['ball_vel_x'], state['ball_vel_z']]
+            adapted_state.append(id + team_possession + control_flag + action_time + position + velocity + mechanism + action)  # mechanism must always be added last
+
             mechanism = [state['ball_mechanism']]
-            adapted_state.append(id + team_possession + control_flag + action_time + position + velocity + mechanism)  # mechanism must always be added last
+            action = [None]
+            state_info.append(mechanism + action)
 
             # Players
-            adapted_state.extend(gather_player_information(state, 'home'))
-            adapted_state.extend(gather_player_information(state, 'away'))
+            player_states, player_infos = gather_player_information(state, 'home')
+            adapted_state.extend(player_states)
+            state_info.extend(player_infos)
+            player_states, player_infos = gather_player_information(state, 'away')
+            adapted_state.extend(player_states)
+            state_info.extend(player_infos)
 
             adapted_episode.append(adapted_state)
+            episode_info.append(state_info)
         adapted_state_history.append(adapted_episode)
+        history_info.append(episode_info)
 
 
     dataset = []
-    for episode in adapted_state_history:
+    for episode, info in zip(adapted_state_history, history_info):
         sample = dict()
 
+        # State
         numpy_episode = np.array(episode)
         num_steps, num_obj = numpy_episode.shape[:2]
         sample['action'] = np.zeros(num_steps - 1).astype(np.int64)
-        sample['obs'] = numpy_episode[:-1, ..., :-1]
-        sample['next_obs'] = numpy_episode[1:, ..., :-1]
-        sample['info'] = {f'{i}_mechanism': numpy_episode[1:, i, -1] for i in range(num_obj)}
+        sample['obs'] = numpy_episode[:-1]
+        sample['next_obs'] = numpy_episode[1:]
+
+        # Additional info
+        numpy_info = np.array(info, dtype=object)
+        sample['info'] = {}
+        sample['info'].update({f'{i}_mechanism': numpy_info[1:, i, 0] for i in range(num_obj)})
+        sample['info'].update({f'{i}_i+1_action': numpy_info[1:, i, 1] for i in range(num_obj)})
+        sample['info'].update({f'{i}_i_action': numpy_info[:-1, i, 1] for i in range(num_obj)})
+
 
         dataset.append(sample)
 
