@@ -529,7 +529,9 @@ class PygameInterface:
         # i += 1 # TODO: player names in game state
 
     def DrawBall(self, game_state):
-        if self.game.control.GetControl() is None:
+        control_team = int(game_state[GameState.CONTROL_TEAM])
+        control_player = int(game_state[GameState.CONTROL_INDEX])
+        if control_team == -1 and control_player == -1:
             colour = pygame.Color('pink')
             posx = game_state['ball_pos_x']
             posz = game_state['ball_pos_z']
