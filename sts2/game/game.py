@@ -128,6 +128,7 @@ class Game(Simulation):
         self.InitPlayerPositions()
         self.InitBall()
         self.RandomlyGiveControl()
+        self.round_start_tick = self.tick
 
     def InitBall(self):
         self.state.SetBallMechanism(0)
@@ -154,6 +155,11 @@ class Game(Simulation):
                 self.SetGamePhase(GamePhase.STOPPAGE_TIMEUP, verbosity)
                 self.game_event_history.AddEvent(
                     GameEvent(self.tick, STS2Event.GAME_END, '', ''))
+                self.PhaseUpdate(verbosity)
+            elif (self.tick - self.round_start_tick) >= self.rules.max_round_tick:
+                # Current round has been going on for too long
+                self.WipeCurrentGame()
+                self.SetGamePhase(GamePhase.START_PLAY, verbosity)
                 self.PhaseUpdate(verbosity)
             else:
                 # this just clears out the "previous_phase" properly

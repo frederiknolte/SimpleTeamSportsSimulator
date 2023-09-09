@@ -97,6 +97,7 @@ class Simulation:
         self.players = players
         self.verbosity = max(0, verbosity)
         self.tick = 0
+        self.round_start_tick = 0
         self.player_identity_list = [None] * len(players)  # subclass should fill
         self.game_state_history = []
         self.game_state_vector = None
@@ -137,6 +138,15 @@ class Simulation:
                              self.player_action_list, self.player_value_estimate_list,
                              self.player_reward_list)
         self.game_state_history.append(h)
+
+    def WipeCurrentGame(self):
+        for i in reversed(range(len(self.game_state_history))):
+            if self.game_state_history[i].tick >= self.round_start_tick:
+                self.game_state_history.pop(-1)
+        for i in reversed(range(len(self.game_event_history.event_list))):
+            if self.game_event_history.event_list[i].tick >= self.round_start_tick:
+                self.game_event_history.event_list.pop(-1)
+        self.tick = self.round_start_tick
 
     def CustomTick(self):
         # override this method with simulation specific logic
