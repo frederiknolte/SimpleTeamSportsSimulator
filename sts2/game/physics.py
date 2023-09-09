@@ -182,3 +182,14 @@ class Physics:
 
     def ccw(self, A, B, C):
         return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
+
+    def CollisionTest(self, position, other_positions, radius):
+        # Evaluates whether there is a collision between position and any of the other positions.
+        # Returns True if a collision is found.
+        if len(other_positions) == 0:
+            return False
+        position = numpy.array([position])
+        other_positions = numpy.array(other_positions)
+        diff = other_positions - position
+        dist = numpy.linalg.norm(diff, axis=-1)
+        return numpy.any(dist <= radius)

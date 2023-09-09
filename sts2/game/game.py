@@ -84,14 +84,20 @@ class Game(Simulation):
                 self.tick, self.GetPreviousGamePhase(), self.GetGamePhase()))
 
     def InitPlayerPositions(self):
+        sampled_positions = []
         for player in self.players:
-            # r = numpy.random.random()
-            r = numpy.random.uniform(0, 0.5)
-            r = r ** self.init_exp
-            attack_z = player.GetAttackingNetPos(self)[1]
-            z = attack_z * r - attack_z * (1.0 - r)
-            player.SetPosition(self, numpy.array(
-                [float(numpy.random.randint(self.arena.min_x, self.arena.max_x)), z]))
+            while True:
+                # r = numpy.random.random()
+                r = numpy.random.uniform(0, 0.5)
+                r = r ** self.init_exp
+                attack_z = player.GetAttackingNetPos(self)[1]
+                z = attack_z * r - attack_z * (1.0 - r)
+                position = [float(numpy.random.randint(self.arena.min_x, self.arena.max_x)), z]
+                if not self.physics.CollisionTest(position, sampled_positions, self.rules.player_radius):
+                    break
+
+            player.SetPosition(self, numpy.array(position))
+            sampled_positions.append(position)
 
     def RandomlyGiveControl(self):
         # random player seemed to mostly pick the first player
