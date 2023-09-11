@@ -180,7 +180,12 @@ class Game(Simulation):
         # compensate so policy space is normalized to attack dir
         input *= attack_dir
         input = numpy.sign(input)
-        pvi = int((input[0] + 1) * 3 + input[1] + 1)
+        try:
+            pvi = int((input[0] + 1) * 3 + input[1] + 1)
+        except:
+            print(f'input: {input}')
+            print(f'attack_dir: {attack_dir}')
+            pvi = 0
         # print("input", input, "policy vector index", pvi)
 
         # input 0 0 is 4 (no input)
