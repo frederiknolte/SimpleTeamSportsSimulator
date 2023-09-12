@@ -459,10 +459,7 @@ class Game(Simulation):
         with open(save_state_path, 'w') as fout:
             json.dump(state_history, fout)
 
-    def LoadStateHistory(self, load_path, start=0):
-        with open(load_path, 'r') as fin:
-            state_history = json.load(fin)
-
+    def LoadStateHistory(self, state_history, start=0):
         for history_entry in state_history[start:]:
             h = GameHistoryEntry(tick=None,
                                  state=pd.Series(history_entry),
