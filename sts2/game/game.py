@@ -369,7 +369,9 @@ class Game(Simulation):
         if not simulate:
             self.game_event_history.AddEvent(
                 GameEvent(self.tick, STS2Event.PASS, source_player.name, target_player.name))
-            self.SendBall(target_player.GetPosition(self))
+            dist = numpy.linalg.norm(target_player.GetPosition(self) - source_player.GetPosition(self))
+            target_pos = target_player.GetPosition(self) + target_player.GetVelocity(self) * dist * 0.6
+            self.SendBall(target_pos)
             source_player.ResponseTime(self, self.rules.pass_response_time)
         return through_chance
 
