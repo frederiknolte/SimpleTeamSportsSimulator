@@ -133,7 +133,7 @@ class Player(object):
         if input_mag > 0.01:
             input = input / input_mag
         # force onto [-1,0,1] for each dimension
-        input = numpy.round(input)
+        # input = numpy.round(input)
         self.SetInput(game, input)
 
     def Think(self, game, verbosity):
