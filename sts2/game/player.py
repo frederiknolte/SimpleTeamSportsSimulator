@@ -632,19 +632,19 @@ class HumanKeyboardPlayer(Player):
                      'z': [-1.0, -1.0], 'x': [0.0, -1.0], 'c': [1.0, -1.0]}
         accel = accel_map.get(i, [0.0, 0.0])
         self.SetInput(game, numpy.array(accel))
-        if i is ' ':
+        if i == ' ':
             self.SetAction(game, Action.SHOOT)
-        elif i is '1':
+        elif i == '1':
             self.SetAction(game, Action.PASS_1)
-        elif i is '2':
+        elif i == '2':
             self.SetAction(game, Action.PASS_2)
-        elif i is '3':
+        elif i == '3':
             self.SetAction(game, Action.PASS_3)
-        elif i is '4':
+        elif i == '4':
             self.SetAction(game, Action.PASS_4)
-        elif i is '5':
+        elif i == '5':
             self.SetAction(game, Action.PASS_5)
-        elif i is 'b':
+        elif i == 'b':
             self.SetAction(game, Action.BLOCK)
 
 
