@@ -1,8 +1,14 @@
 # Copyright (C) 2020 Electronic Arts Inc.  All rights reserved.
 
 import random
-import time
+import tqdm
 from sts2.environment import STS2Environment
+
+
+SEED = 42
+WITH_PYGAME = False
+SAVE_STATES = True
+TIMEOUT_TICKS = 50000
 
 
 def naive_action(obs):
@@ -26,19 +32,17 @@ if __name__ == "__main__":
                           num_away_DefensivePlayer=0,
                           num_home_ShyPlayer=0,
                           num_away_ShyPlayer=0,
-                          with_pygame=True,
-                          save_states=False,
-                          timeout_ticks=1e10,
+                          with_pygame=WITH_PYGAME,
+                          save_states=SAVE_STATES,
+                          timeout_ticks=TIMEOUT_TICKS,
                           verbosity=0)
-    env.seed(42)
+    env.seed(SEED)
     obs, info = env.reset()
+    progress_bar = tqdm.tqdm(total=TIMEOUT_TICKS)
 
-    start_time = time.time()
     while True:
         action = naive_action(obs)
         obs, r, done, info = env.step(None)
         env.render()
-
+        progress_bar.update(n=env.game.tick - progress_bar.n)
         if done: break
-
-    print(f'Runtime: {time.time() - start_time} seconds.')
