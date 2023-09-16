@@ -4,6 +4,7 @@ import h5py
 import numpy as np
 
 from sts2.game.settings import TeamSide
+from sts2.game.game_state import Action
 
 
 def save_list_dict_h5py(array_dict, fname):
@@ -52,10 +53,11 @@ def gather_player_information(state, prefix):
         action_time = [state[prefix + str(player_id) + '_action_time']]
         position = [state[prefix + str(player_id) + '_pos_x'], state[prefix + str(player_id) + '_pos_z']]
         velocity = [state[prefix + str(player_id) + '_vel_x'], state[prefix + str(player_id) + '_vel_z']]
-        adapted_state.append(id + team_possession + control_flag + action_time + position + velocity)  # mechanism must always be added last
+        acceleration = [state[prefix + str(player_id) + '_input_x'], state[prefix + str(player_id) + '_input_z']]
+        adapted_state.append(id + team_possession + control_flag + action_time + position + velocity + acceleration)
 
         mechanism = [state[prefix + str(player_id) + '_mechanism']]
-        action = [state[prefix + str(player_id) + '_action']]
+        action = [Action.ACTION_LIST.index(state[prefix + str(player_id) + '_action'])]
         state_info.append(mechanism + action)
     return adapted_state, state_info
 
@@ -76,6 +78,7 @@ if __name__ == "__main__":
         state_history[-1].append(history_event)
         if history_event['current_phase'] == 'STOPPAGE_GOAL':
             state_history.append(list())
+    print(f'deleting last episode of length {len(state_history[-1])}')
     state_history.pop(-1)  # Remove unfinished/empty episode
 
     adapted_state_history = list()
@@ -94,10 +97,11 @@ if __name__ == "__main__":
             action_time = [0]
             position = [state['ball_pos_x'], state['ball_pos_z']]
             velocity = [state['ball_vel_x'], state['ball_vel_z']]
-            adapted_state.append(id + team_possession + control_flag + action_time + position + velocity + mechanism + action)  # mechanism must always be added last
+            acceleration = [0, 0]
+            adapted_state.append(id + team_possession + control_flag + action_time + position + velocity + acceleration)
 
             mechanism = [state['ball_mechanism']]
-            action = [None]
+            action = [Action.ACTION_LIST.index('NONE')]
             state_info.append(mechanism + action)
 
             # Players
@@ -126,12 +130,11 @@ if __name__ == "__main__":
         sample['next_obs'] = numpy_episode[1:]
 
         # Additional info
-        numpy_info = np.array(info, dtype=object)
+        numpy_info = np.array(info)
         sample['info'] = {}
         sample['info'].update({f'{i}_mechanism': numpy_info[1:, i, 0] for i in range(num_obj)})
         sample['info'].update({f'{i}_i+1_action': numpy_info[1:, i, 1] for i in range(num_obj)})
         sample['info'].update({f'{i}_i_action': numpy_info[:-1, i, 1] for i in range(num_obj)})
-
 
         dataset.append(sample)
 
