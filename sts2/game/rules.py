@@ -58,10 +58,10 @@ SIMPLE_GAME_RULES = Rules(
     ball_speed=1, ball_velocity_decay=0.995)
 
 STANDARD_GAME_RULES = Rules(
-    max_tick=15 * 30, max_round_tick=500, arena_size=(18, 36), player_radius=0.75, ball_radius=0.4, max_vel=0.5,
-    max_accel=0.05, min_intercept_chance=0.0, max_intercept_chance=1.0,
-    max_intercept_dist=1.5, player_intercept_speed=0.05, check_stun_time=20,
-    shot_response_time=15, pass_response_time=15, receive_response_time=10,
+    max_tick=15 * 30, max_round_tick=1000, arena_size=(18, 36), player_radius=0.75, ball_radius=0.4, max_vel=0.6,
+    max_accel=0.1, min_intercept_chance=0.0, max_intercept_chance=1.0,
+    max_intercept_dist=1.5, player_intercept_speed=0.05, check_stun_time=15,
+    shot_response_time=10, pass_response_time=10, receive_response_time=5,
     shot_distance_accuracy_scale=4.0, enable_player_collisions=True,
     motion_model=Rules.MotionModel.ACCELERATION_MODEL,
     layout_constraint=Rules.LayoutConstraint.NONE,
