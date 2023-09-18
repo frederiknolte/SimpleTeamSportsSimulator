@@ -33,10 +33,6 @@ def get_game(timeout_ticks,
              num_away_SimplePlayer,
              num_home_AdaptedSimplePlayer,
              num_away_AdaptedSimplePlayer,
-             num_home_EgoisticPlayer,
-             num_away_EgoisticPlayer,
-             num_home_AggressivePlayer,
-             num_away_AggressivePlayer,
              num_home_DefensivePlayer,
              num_away_DefensivePlayer,
              num_home_ShyPlayer,
@@ -55,12 +51,6 @@ def get_game(timeout_ticks,
     for _ in range(num_home_AdaptedSimplePlayer):
         i += 1
         home_players.append(AdaptedSimplePlayer('h_adsim_' + str(i), TeamSide.HOME))
-    for _ in range(num_home_EgoisticPlayer):
-        i += 1
-        home_players.append(EgoisticPlayer('h_ego_' + str(i), TeamSide.HOME))
-    for _ in range(num_home_AggressivePlayer):
-        i += 1
-        home_players.append(AggressivePlayer('h_agg_' + str(i), TeamSide.HOME))
     for _ in range(num_home_DefensivePlayer):
         i += 1
         home_players.append(DefensivePlayer('h_def_' + str(i), TeamSide.HOME))
@@ -79,12 +69,6 @@ def get_game(timeout_ticks,
     for _ in range(num_away_AdaptedSimplePlayer):
         i += 1
         away_players.append(AdaptedSimplePlayer('a_adsim_' + str(i), TeamSide.AWAY))
-    for _ in range(num_away_EgoisticPlayer):
-        i += 1
-        away_players.append(EgoisticPlayer('a_ego_' + str(i), TeamSide.AWAY))
-    for _ in range(num_away_AggressivePlayer):
-        i += 1
-        away_players.append(AggressivePlayer('a_agg_' + str(i), TeamSide.AWAY))
     for _ in range(num_away_DefensivePlayer):
         i += 1
         away_players.append(DefensivePlayer('a_def_' + str(i), TeamSide.AWAY))
@@ -115,10 +99,6 @@ class STS2Environment(object):
             num_away_SimplePlayer=3,
             num_home_AdaptedSimplePlayer=0,
             num_away_AdaptedSimplePlayer=0,
-            num_home_EgoisticPlayer=0,
-            num_away_EgoisticPlayer=0,
-            num_home_AggressivePlayer=0,
-            num_away_AggressivePlayer=0,
             num_home_DefensivePlayer=0,
             num_away_DefensivePlayer=0,
             num_home_ShyPlayer=0,
@@ -136,10 +116,6 @@ class STS2Environment(object):
             num_away_SimplePlayer=num_away_SimplePlayer,
             num_home_AdaptedSimplePlayer=num_home_AdaptedSimplePlayer,
             num_away_AdaptedSimplePlayer=num_away_AdaptedSimplePlayer,
-            num_home_EgoisticPlayer=num_home_EgoisticPlayer,
-            num_away_EgoisticPlayer=num_away_EgoisticPlayer,
-            num_home_AggressivePlayer=num_home_AggressivePlayer,
-            num_away_AggressivePlayer=num_away_AggressivePlayer,
             num_home_DefensivePlayer=num_home_DefensivePlayer,
             num_away_DefensivePlayer=num_away_DefensivePlayer,
             num_home_ShyPlayer=num_home_ShyPlayer,
