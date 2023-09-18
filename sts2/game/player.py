@@ -487,10 +487,17 @@ class DefensivePlayer(Player):
         elif control_player:
             if numpy.random.random() < self.RANDOM_SKATE_CHANCE:
                 self.SetInput(game, numpy.zeros(2))
+            elif control_player.team_side == self.team_side:
+                # move in front of own goal
+                if verbosity: print('move in front of own goal')
+                target_pos = self.GetOwnNetPos(game) * 0.5
+                delta = target_pos - self.GetPosition(game)
+                self.SetInput(game, delta)
+                self.SetMechanism(game, 4)
             else:
                 # move towards own goal
                 if verbosity: print('move towards own goal')
-                target_pos = self.GetOwnNetPos(game)
+                target_pos = self.GetOwnNetPos(game) * 0.9
                 delta = target_pos - self.GetPosition(game)
                 self.SetInput(game, delta)
                 self.SetMechanism(game, 5)
@@ -532,6 +539,7 @@ class ShyPlayer(Player):
             self.SetInput(game, -net_delta)
             self.SetMechanism(game, 2)
 
+            lowest_net_dist = numpy.linalg.norm(self.GetPosition(game) - net_pos)
             for teammate, action in zip(game.team_players[self.team_side], Action.PASSES):
                 if teammate is self:
                     continue
@@ -539,11 +547,12 @@ class ShyPlayer(Player):
                     continue
                 net_dist = numpy.linalg.norm(teammate.GetPosition(game) - net_pos)
                 pass_chance = game.PlayerPass(self, teammate, True, 0)
-                should_pass = self.RANDOM_PASS_CHANCE == 0.0 and pass_chance > self.PASS_CHANCE
+                should_pass = self.RANDOM_PASS_CHANCE == 0.0 and net_dist < lowest_net_dist and pass_chance > self.PASS_CHANCE
                 should_pass = should_pass or numpy.random.random() < self.RANDOM_PASS_CHANCE
                 if should_pass:
                     self.SetAction(game, action)
-                    if verbosity: print('next pass net dist is', net_dist, self.action)
+                    lowest_net_dist = net_dist
+                    if verbosity: print('best pass net dist is', net_dist, self.action)
 
             if self.GetAction(game) == Action.NONE:
                 if verbosity: print('move towards net')
@@ -553,8 +562,8 @@ class ShyPlayer(Player):
                 self.SetInput(game, numpy.zeros(2))
             else:
                 # move towards own goal
-                if verbosity: print('move towards MIDWAY point to opposing controller')
-                target_pos = self.GetOwnNetPos(game)
+                if verbosity: print('move towards own goal')
+                target_pos = self.GetOwnNetPos(game) * 0.9
                 delta = target_pos - self.GetPosition(game)
                 self.SetInput(game, delta)
                 self.SetMechanism(game, 5)
