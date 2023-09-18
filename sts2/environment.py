@@ -6,7 +6,7 @@ import numpy as np
 from sts2.client_adapter import ClientAdapter
 from sts2.game.game import Game
 from sts2.game.game_state import Action
-from sts2.game.player import SimplePlayer, AdaptedSimplePlayer, EgoisticPlayer, AggressivePlayer, DefensivePlayer, ShyPlayer
+from sts2.game.player import SimplePlayer, AdaptedSimplePlayer, TacticalPlayer, DefensivePlayer, ShyPlayer
 from sts2.game.pygame_interface import PygameInterface, INTERFACE_SETTINGS
 from sts2.game.rules import STANDARD_GAME_RULES
 from sts2.game.settings import TeamSide
@@ -33,6 +33,8 @@ def get_game(timeout_ticks,
              num_away_SimplePlayer,
              num_home_AdaptedSimplePlayer,
              num_away_AdaptedSimplePlayer,
+             num_home_TacticalPlayer,
+             num_away_TacticalPlayer,
              num_home_DefensivePlayer,
              num_away_DefensivePlayer,
              num_home_ShyPlayer,
@@ -51,6 +53,9 @@ def get_game(timeout_ticks,
     for _ in range(num_home_AdaptedSimplePlayer):
         i += 1
         home_players.append(AdaptedSimplePlayer('h_adsim_' + str(i), TeamSide.HOME))
+    for _ in range(num_home_TacticalPlayer):
+        i += 1
+        home_players.append(TacticalPlayer('h_tac_' + str(i), TeamSide.HOME))
     for _ in range(num_home_DefensivePlayer):
         i += 1
         home_players.append(DefensivePlayer('h_def_' + str(i), TeamSide.HOME))
@@ -69,6 +74,9 @@ def get_game(timeout_ticks,
     for _ in range(num_away_AdaptedSimplePlayer):
         i += 1
         away_players.append(AdaptedSimplePlayer('a_adsim_' + str(i), TeamSide.AWAY))
+    for _ in range(num_away_TacticalPlayer):
+        i += 1
+        away_players.append(TacticalPlayer('a_tac_' + str(i), TeamSide.AWAY))
     for _ in range(num_away_DefensivePlayer):
         i += 1
         away_players.append(DefensivePlayer('a_def_' + str(i), TeamSide.AWAY))
@@ -99,6 +107,8 @@ class STS2Environment(object):
             num_away_SimplePlayer=3,
             num_home_AdaptedSimplePlayer=0,
             num_away_AdaptedSimplePlayer=0,
+            num_home_TacticalPlayer=0,
+            num_away_TacticalPlayer=0,
             num_home_DefensivePlayer=0,
             num_away_DefensivePlayer=0,
             num_home_ShyPlayer=0,
@@ -116,6 +126,8 @@ class STS2Environment(object):
             num_away_SimplePlayer=num_away_SimplePlayer,
             num_home_AdaptedSimplePlayer=num_home_AdaptedSimplePlayer,
             num_away_AdaptedSimplePlayer=num_away_AdaptedSimplePlayer,
+            num_home_TacticalPlayer=num_home_TacticalPlayer,
+            num_away_TacticalPlayer=num_away_TacticalPlayer,
             num_home_DefensivePlayer=num_home_DefensivePlayer,
             num_away_DefensivePlayer=num_away_DefensivePlayer,
             num_home_ShyPlayer=num_home_ShyPlayer,

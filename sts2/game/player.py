@@ -338,6 +338,93 @@ class AdaptedSimplePlayer(Player):
             self.SetMechanism(game, 6)
 
 
+class TacticalPlayer(Player):
+    SHOOT_ARENA_DIST = 0.3
+    SHOT_CHANCE = 0.3
+    PASS_CHANCE = 0.8
+    PLAY_RANDOMLY = False
+    if PLAY_RANDOMLY:
+        RANDOM_SHOT_CHANCE = 0.03
+        RANDOM_PASS_CHANCE = 0.03
+        RANDOM_SKATE_CHANCE = 0.9
+    else:
+        RANDOM_SHOT_CHANCE = 0.0
+        RANDOM_PASS_CHANCE = 0.0
+        RANDOM_SKATE_CHANCE = 0.0
+
+    def __init__(self, name, team_side):
+        super(TacticalPlayer, self).__init__(name, team_side)
+
+    def custom_think(self, game, verbosity):
+        super(TacticalPlayer, self).custom_think(game, verbosity)
+
+        if verbosity: print('simple', self.name, 'thinking:', end=" ")
+        control_player = game.control.GetControl()
+        net_pos = self.GetAttackingNetPos(game)
+        player_pos = self.GetPosition(game)
+        tactical_pos = numpy.array([numpy.sign(player_pos[0]) * 0.5 * game.state.GetField(game.state.ARENA_MAX_X), net_pos[1] * 0.7])
+
+        if control_player is self:
+            net_delta = net_pos - self.GetPosition(game)
+            tactical_delta = tactical_pos - self.GetPosition(game)
+            # move towards net
+            self.SetInput(game, tactical_delta)
+            self.SetMechanism(game, 9)
+            net_dist = numpy.linalg.norm(net_delta)
+
+            shoot_dist = self.SHOOT_ARENA_DIST * numpy.linalg.norm(
+                numpy.array(game.arena.arena_size))
+            shot_chance = game.PlayerShot(self, True, 0)
+            # shoot if close
+            shoot = self.RANDOM_SHOT_CHANCE == 0.0 and net_dist < shoot_dist and shot_chance > self.SHOT_CHANCE
+            shoot = shoot or numpy.random.random() < self.RANDOM_SHOT_CHANCE
+            if shoot:
+                if verbosity:   print('shooting because %f < %f' % (net_dist, shoot_dist))
+                self.SetAction(game, Action.SHOOT)
+            else:
+                lowest_net_dist = numpy.linalg.norm(self.GetPosition(game) - net_pos)
+                for teammate, action in zip(game.team_players[self.team_side], Action.PASSES):
+                    if teammate is self:
+                        continue
+                    if teammate.GetAction(game) == Action.STUNNED:
+                        continue
+                    net_dist = numpy.linalg.norm(teammate.GetPosition(game) - net_pos)
+                    pass_chance = game.PlayerPass(self, teammate, True, 0)
+                    should_pass = self.RANDOM_PASS_CHANCE == 0.0 and net_dist < lowest_net_dist and pass_chance > self.PASS_CHANCE
+                    should_pass = should_pass or numpy.random.random() < self.RANDOM_PASS_CHANCE
+                    if should_pass:
+                        self.SetAction(game, action)
+                        lowest_net_dist = net_dist
+                        if verbosity: print('best pass net dist is', net_dist, self.action)
+
+            if self.GetAction(game) == Action.NONE:
+                if verbosity: print('move towards net')
+
+        elif control_player:
+            if numpy.random.random() < self.RANDOM_SKATE_CHANCE:
+                self.SetInput(game, numpy.zeros(2))
+            elif control_player.team_side == self.team_side:
+                if verbosity: print('move up areana')
+                # just move up arena
+                input = tactical_pos - self.GetPosition(game)
+                self.SetInput(game, input)
+                self.SetMechanism(game, 9)
+            else:
+                # move towards midway point between opposing controller and own goal
+                if verbosity: print('move towards MIDWAY point to opposing controller')
+                target_pos = (control_player.GetPosition(
+                    game) + control_player.GetAttackingNetPos(game)) * 0.5
+                delta = target_pos - self.GetPosition(game)
+                self.SetInput(game, delta)
+                self.SetMechanism(game, 3)
+        else:
+            if verbosity: print('move towards ball')
+            ball_pos = game.state.GetBallPosition()
+            input = ball_pos - self.GetPosition(game)
+            self.SetInput(game, input)
+            self.SetMechanism(game, 6)
+
+
 class DefensivePlayer(Player):
     SHOOT_ARENA_DIST = 0.3
     SHOT_CHANCE = 0.3
