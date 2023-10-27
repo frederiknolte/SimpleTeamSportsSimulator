@@ -285,6 +285,9 @@ class PygameInterface:
     def GetNextGameFrame(self):
         if self.replay_frame >= 0:
 
+            if self.replay_frame >= len(self.game.game_state_history):
+                return None
+
             replay_state = self.game.game_state_history[self.replay_frame].state
 
             # we are in replay
@@ -292,8 +295,8 @@ class PygameInterface:
                 self.replay_frame += int(numpy.round(self.replay_speed))
                 self.replay_frame += self.replay_step
 
-            self.replay_frame = numpy.clip(self.replay_frame, 0,
-                                           len(self.game.game_state_history) - 1)
+            # self.replay_frame = numpy.clip(self.replay_frame, 0,
+            #                                len(self.game.game_state_history) - 1)
 
             return replay_state
 
@@ -579,5 +582,6 @@ KEYBOARD_ONLY = False
 # INTERFACE_SETTINGS = InterfaceSettings(framerate=5, x_scale=30, z_scale=30, rink_border=0, dead_zone=0.2, pause_frames=15)
 
 # normal
-INTERFACE_SETTINGS = InterfaceSettings(framerate=15, x_scale=20, z_scale=20, rink_border=0,
-                                       dead_zone=0.2, pause_frames=15, keyboard_only=KEYBOARD_ONLY)
+INTERFACE_SETTINGS = InterfaceSettings(framerate=1000, x_scale=20, z_scale=20, rink_border=0,
+                                       dead_zone=0.2, pause_frames=15, keyboard_only=KEYBOARD_ONLY,
+                                       draw_mechanism=True)
