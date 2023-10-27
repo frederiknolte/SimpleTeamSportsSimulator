@@ -53,8 +53,7 @@ def gather_player_information(state, prefix):
         action_time = [state[prefix + str(player_id) + '_action_time']]
         position = [state[prefix + str(player_id) + '_pos_x'], state[prefix + str(player_id) + '_pos_z']]
         velocity = [state[prefix + str(player_id) + '_vel_x'], state[prefix + str(player_id) + '_vel_z']]
-        acceleration = [state[prefix + str(player_id) + '_input_x'], state[prefix + str(player_id) + '_input_z']]
-        adapted_state.append(id + team_possession + control_flag + action_time + position + velocity + acceleration)
+        adapted_state.append(id + team_possession + control_flag + action_time + position + velocity)
 
         mechanism = [state[prefix + str(player_id) + '_mechanism']]
         action = [Action.ACTION_LIST.index(state[prefix + str(player_id) + '_action'])]
