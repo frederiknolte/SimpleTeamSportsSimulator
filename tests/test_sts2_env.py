@@ -20,12 +20,14 @@ def naive_action(obs):
 
 
 if __name__ == "__main__":
-    env = STS2Environment(num_home_SimplePlayer=3,
-                          num_away_SimplePlayer=3,
-                          num_home_AdaptedSimplePlayer=0,
+    env = STS2Environment(num_home_SimplePlayer=0,
+                          num_away_SimplePlayer=0,
+                          num_home_AdaptedSimplePlayer=2,
                           num_away_AdaptedSimplePlayer=0,
+                          num_home_TacticalPlayer=0,
+                          num_away_TacticalPlayer=0,
                           num_home_DefensivePlayer=0,
-                          num_away_DefensivePlayer=0,
+                          num_away_DefensivePlayer=2,
                           num_home_ShyPlayer=0,
                           num_away_ShyPlayer=0,
                           with_pygame=WITH_PYGAME,
