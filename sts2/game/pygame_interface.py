@@ -53,7 +53,7 @@ def ScaleColor(color, scale):
 
 class InterfaceSettings:
     def __init__(self, framerate, dead_zone, x_scale, z_scale, rink_border, pause_frames,
-                 keyboard_only):
+                 keyboard_only, draw_mechanism):
         self.framerate = framerate
         self.dead_zone = dead_zone
         self.x_scale = x_scale
@@ -61,6 +61,7 @@ class InterfaceSettings:
         self.rink_border = rink_border
         self.pause_frames = pause_frames
         self.keyboard_only = keyboard_only
+        self.draw_mechanism = draw_mechanism
 
 
 class GamePads:
@@ -243,6 +244,9 @@ class GamePad(Controller):
 class PygameInterface:
     img_id = 0  # Mas
     save_image_path = None  # Mas
+    mechanism_colors = ['lightcoral', 'lightblue1', 'lightgoldenrod', 'lightsalmon',
+                        'lightsteelblue', 'lightyellow2', 'mistyrose4',
+                        'seagreen3', 'slategrey', 'yellowgreen']
 
     def __init__(self, game, save_states, settings, replay=False):
         # os.environ['SDL_VIDEO_WINDOW_POS'] = str(0) + "," + str(0)
@@ -513,8 +517,12 @@ class PygameInterface:
                 if action_time > 0:
                     use_color = ScaleColor(use_color, 0.5)
 
-                if has_control:
+                if has_control and not self.settings.draw_mechanism:
                     pygame.draw.circle(self.screen, pygame.Color('black'), (x, z), int(
+                        self.game.rules.player_radius * 1.4 * self.settings.x_scale), 0)
+                elif self.settings.draw_mechanism:
+                    mech_colour = self.mechanism_colors[game_state[team_prefix + str(player_index) + GameState.PLAYER_MECHANISM]]
+                    pygame.draw.circle(self.screen, pygame.Color(mech_colour), (x, z), int(
                         self.game.rules.player_radius * 1.4 * self.settings.x_scale), 0)
 
                 draw_radius = self.game.rules.player_radius
@@ -534,16 +542,20 @@ class PygameInterface:
     def DrawBall(self, game_state):
         control_team = int(game_state[GameState.CONTROL_TEAM])
         control_player = int(game_state[GameState.CONTROL_INDEX])
-        if control_team == -1 and control_player == -1:
-            colour = pygame.Color('pink')
+        if (control_team == -1 and control_player == -1) or self.settings.draw_mechanism:
             posx = game_state['ball_pos_x']
             posz = game_state['ball_pos_z']
             x, z = self.GameCoordToScreenCoord(posx, posz)
             x, z = int(x), int(z)
-            draw_radius = self.game.rules.ball_radius
 
+            if self.settings.draw_mechanism:
+                mech_colour = self.mechanism_colors[game_state[GameState.BALL_MECHANISM]]
+                pygame.draw.circle(self.screen, pygame.Color(mech_colour), (x, z), int(
+                    self.game.rules.ball_radius * 1.4 * self.settings.x_scale), 0)
+
+            colour = pygame.Color('pink')
             pygame.draw.circle(self.screen, colour, (x, z),
-                               int(draw_radius * self.settings.x_scale), 0)
+                               int(self.game.rules.ball_radius * self.settings.x_scale), 0)
             self.text_print.Print('ball', (x, z), align='center')
 
     def Pause(self, pause):
